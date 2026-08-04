@@ -30,7 +30,7 @@ function renderSidebar(){
   var refActive=refViews.indexOf(v)>=0;
   h+=sideBtn('ref','Referrals','folder-open',refCount,refActive);
   h+='<div class="subnav">';
-  h+=subBtn('awaitingTriage','New',triageCount,v==='awaitingTriage'||v==='newReferrals');
+  h+=subBtn('awaitingTriage','New Referrals',triageCount,v==='awaitingTriage'||v==='newReferrals');
   h+=subBtn('inProgress','Reg. Appointments',inProgCount,v==='inProgress'||v==='registrations'||v==='onlinePending'||v==='detail');
   h+=subBtn('waitingList','Waiting List',waitListCount,v==='waitingList');
   h+='</div>';
@@ -449,13 +449,16 @@ function renderNewReferrals(){
   h+='<div class="head-row"><div><h1>New Referrals</h1><p style="color:var(--muted);margin-top:4px">Referrals received but not yet fully registered.</p></div>';
   h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name, ref, phone…" value="'+esc(STATE.newRefSearch||'')+'" oninput="STATE.newRefSearch=this.value;render()"></div></div>';
   if(!refs.length){h+='<div class="card placeholder"><div class="pic">'+ic('new_ref',32)+'</div><b>No new referrals match</b><p style="margin-top:8px">Try a different search, or clear the search box.</p></div>';return h;}
-  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th><th>Status</th></tr></thead><tbody>';
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Received</th><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Status</th></tr></thead><tbody>';
   refs.forEach(function(r){
     var emerg=r.type==='EMERGENCY';
-    h+='<tr onclick="go(\'detail\',\''+r.ref+'\')"><td class="r-ref">'+esc(r.ref)+'</td>';
+    h+='<tr onclick="go(\'detail\',\''+r.ref+'\')">';
+    h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td>';
+    h+='<td class="r-ref">'+esc(r.ref)+'</td>';
     h+='<td><span class="r-name">'+esc(r.name)+(emerg?' <span class="flag-tag flag-emerg">Emergency</span>':'')+'</span></td>';
-    h+='<td class="r-muted">'+esc(r.borough)+'</td><td class="r-muted" style="font-family:\'IBM Plex Mono\';font-size:12px">'+esc(r.type)+'</td>';
-    h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
+    h+='<td class="r-muted">'+esc(r.borough)+'</td>';
+    h+='<td class="r-muted" style="font-family:var(--font-mono);font-size:12px">'+esc(r.type)+'</td>';
+    h+='<td>'+statusPill(r)+'</td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
