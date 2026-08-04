@@ -10,12 +10,14 @@ function render(){
   renderSidebar();
   if(typeof lucide !== 'undefined') lucide.createIcons();
   var h='',v=STATE.view;
-  if(v==='today')h=renderToday();
+  if(v==='dashboard'||v==='today')h=renderToday();
   else if(v==='overview')h=renderOverview();
   else if(v==='allReferrals')h=renderAllReferrals();
   else if(v==='newReferrals')h=renderNewReferrals();
   else if(v==='registrations')h=renderRegistrations();
   else if(v==='onlinePending')h=renderOnlinePending();
+  else if(v==='waitingList')h=renderWaitingList();
+  else if(v==='closed')h=renderClosed();
   else if(v==='ben')h=STATE_benRef?renderBeneFile():renderBen();
   else if(v==='detail')h=renderDetail();
   else if(v==='wellbeing')h=renderWellbeing();

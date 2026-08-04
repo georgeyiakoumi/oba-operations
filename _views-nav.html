@@ -4,59 +4,70 @@
 ══════════════════════════════════════════════════════ */
 function renderSidebar(){
   var refs=DATA.referrals||[];
-  var newCount=refs.filter(function(r){return isNewRef(r);}).length;
-  var regCount=refs.filter(function(r){return APPT_PENDING.indexOf(r.status)>=0&&r.apptDate;}).length;
-  var benOpenCount=refs.filter(function(r){return COMPLETE_STATUSES.indexOf(r.status)>=0;}).length;
-  var wbCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
   var v=STATE.view;
-  var refViews=['overview','allReferrals','newReferrals','registrations','ben','detail'];
+
+  /* Counts */
+  var refCount=refs.filter(isReferral).length;
+  var triageCount=refs.filter(isNewRef).length;
+  var inProgCount=refs.filter(isRegAppt).length;
+  var waitListCount=refs.filter(isWaitingList).length;
+  var benCount=refs.filter(isBeneficiary).length;
+  var closedCount=refs.filter(isClosed).length;
+  var wbCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
+
+  /* Active-state groups */
+  var dashViews=['dashboard','today','overview'];
+  var refViews=['allReferrals','newReferrals','awaitingTriage','inProgress','waitingList','registrations','onlinePending','detail'];
   var wbViews=['wellbeing'];
+
   var h='<div class="brand-card"><svg width="28" height="28" viewBox="0 0 30 30" fill="none"><circle cx="15" cy="15" r="13" stroke="#6f9a2a" stroke-width="1.6"/><ellipse cx="11" cy="17" rx="4" ry="2.2" transform="rotate(-40 11 17)" fill="#6f9a2a"/><ellipse cx="18" cy="11" rx="4" ry="2.2" transform="rotate(-40 18 11)" fill="#a7c74a"/></svg><div><div class="logo-text">Olive Branch Aid</div><div class="logo-sub">more than a food bank</div></div></div>';
   h+='<div class="ops-label">OPERATIONS SUITE</div>';
-  h+=sideBtn('today','Today',null,v==='today');
-  /* Referrals — always-visible subnav */
+
+  /* Dashboard */
+  h+=sideBtn('dashboard','Dashboard','star',null,dashViews.indexOf(v)>=0);
+
+  /* Referrals + subnav */
   var refActive=refViews.indexOf(v)>=0;
-  h+=sideBtn('ref','Referrals',null,refActive);
+  h+=sideBtn('ref','Referrals','ref',refCount,refActive);
   h+='<div class="subnav">';
-  h+=subBtn('overview','Overview',null,v==='overview');
-  h+=subBtn('allReferrals','All Referrals',null,v==='allReferrals'||(v==='detail'));
-  h+=subBtn('newReferrals','New Referrals',newCount,v==='newReferrals');
-  var onlineCount=(DATA.referrals||[]).filter(function(r){return r.status==='Pending online registration appointment';}).length;
-  h+=subBtn('registrations','Registrations',regCount,v==='registrations');
-  if(onlineCount)h+=subBtn('onlinePending','Online pending',onlineCount,v==='onlinePending');
-  h+=subBtn('ben','Beneficiaries',benOpenCount,v==='ben');
+  h+=subBtn('awaitingTriage','Awaiting Triage',triageCount,v==='awaitingTriage'||v==='newReferrals');
+  h+=subBtn('inProgress','In Progress',inProgCount,v==='inProgress'||v==='registrations'||v==='onlinePending'||v==='detail');
+  h+=subBtn('waitingList','Waiting List',waitListCount,v==='waitingList');
   h+='</div>';
-  /* Wellbeing — always-visible subnav */
+
+  /* Beneficiaries (top-level) */
+  h+=sideBtn('ben','Beneficiaries','ben',benCount,v==='ben');
+
+  /* Closed (top-level) */
+  h+=sideBtn('closed','Closed','x',closedCount,v==='closed');
+
+  /* Wellbeing + subnav */
   var wbActive=wbViews.indexOf(v)>=0;
-  h+=sideBtn('wb','Wellbeing',wbCount>0?wbCount:null,wbActive);
+  h+=sideBtn('wb','Wellbeing','wb',wbCount>0?wbCount:null,wbActive);
   h+='<div class="subnav">';
-  h+=subBtn('wbOverview','Overview',wbCount>0?wbCount:null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===0);
-  h+=subBtn('wbAllCases','All cases',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===1);
+  h+=subBtn('wbAllCases','All Cases',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===1);
   h+=subBtn('wbTodo','To-do / Notes',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===2);
   h+='</div>';
-  h+=sideBtn('pick','Pick Plan',4,v==='pick');
-  h+=sideBtn('stock','Stock',null,v==='stock');
-  h+=sideBtn('deliv','Deliveries',2,v==='deliv');
-  h+=sideBtn('ops','Operations',null,v==='ops');
-  h+=sideBtn('reports','Reports',null,v==='reports');
+
   h+='<div class="side-foot"><span>OBA Ops v1.0</span>'+(DATA.sheetUrl?'<a href="'+DATA.sheetUrl+'" target="_blank" rel="noopener">sheet ↗</a>':'')+'</div>';
   document.getElementById('sidebar').innerHTML=h;
 }
-function sideBtn(key,lbl,badge,active){
-  var icons={today:'today',ref:'ref',wb:'welfare',pick:'pick',stock:'stock',deliv:'deliv',ops:'ops',reports:'reports'};
-  return '<button class="nav-item'+(active?' active-parent':'')+'" onclick="sideNav(\''+key+'\')"><span class="nav-ic">'+ic(icons[key]||'ref',16)+'</span><span class="nav-lbl">'+lbl+'</span>'+(badge?'<span class="nav-badge">'+badge+'</span>':'')+'</button>';
+function sideBtn(key,lbl,iconName,badge,active){
+  return '<button class="nav-item'+(active?' active-parent':'')+'" onclick="sideNav(\''+key+'\')"><span class="nav-ic">'+ic(iconName||'ref',16)+'</span><span class="nav-lbl">'+lbl+'</span>'+(badge?'<span class="nav-badge">'+badge+'</span>':'')+'</button>';
 }
 function subBtn(key,lbl,badge,active){
   return '<button class="'+(active?'active':'')+'" onclick="sideNav(\''+key+'\')">'+lbl+(badge?'<span class="sub-badge">'+badge+'</span>':'')+'</button>';
 }
 function sideNav(key){
-  if(key==='ref') return go('overview');
-  if(key==='wb') return go('wellbeing');
-  if(key==='wbOverview'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
+  if(key==='dashboard') return go('dashboard');
+  if(key==='ref') return go('allReferrals');
+  if(key==='awaitingTriage') return go('newReferrals');
+  if(key==='inProgress') return go('registrations');
+  if(key==='waitingList') return go('waitingList');
+  if(key==='closed') return go('closed');
+  if(key==='wb'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
   if(key==='wbAllCases'){STATE.wbMainTab=1;STATE.wbRef=null;return go('wellbeing');}
   if(key==='wbTodo'){STATE.wbMainTab=2;STATE.wbRef=null;return go('wellbeing');}
-  if(key==='wellbeing'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
-  if(key==='wb'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
   go(key);
 }
 function go(view,ref){STATE.view=view;if(ref)STATE.ref=ref;if(view==='detail'){STATE.step=1;STATE.wtab=1;}render();window.scrollTo(0,0);}
@@ -210,6 +221,44 @@ function renderNewReferrals(){
     h+='<td><span class="r-name">'+esc(r.name)+(emerg?' <span class="flag-tag flag-emerg">Emergency</span>':'')+'</span></td>';
     h+='<td class="r-muted">'+esc(r.borough)+'</td><td class="r-muted" style="font-family:\'IBM Plex Mono\';font-size:12px">'+esc(r.type)+'</td>';
     h+='<td class="r-muted">'+esc(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════
+   WAITING LIST
+══════════════════════════════════════════════════════ */
+function renderWaitingList(){
+  var refs=(DATA.referrals||[]).filter(isWaitingList);
+  var h='<div class="eyebrow">Referrals</div><h1>Waiting List</h1>';
+  h+='<p style="color:var(--muted);margin:4px 0 20px">Referrals placed on the waiting list.</p>';
+  if(!refs.length){h+='<div class="card placeholder"><div class="pic">'+ic('list',32)+'</div><b>No referrals on the waiting list</b></div>';return h;}
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th><th>Status</th></tr></thead><tbody>';
+  refs.forEach(function(r){
+    h+='<tr onclick="go(\'detail\',\''+r.ref+'\')"><td class="r-ref">'+esc(r.ref)+'</td>';
+    h+='<td><span class="r-name">'+renderFlags(r,{showEmerg:true})+esc(r.name)+'</span></td>';
+    h+='<td class="r-muted">'+esc(r.borough)+'</td><td class="r-muted" style="font-family:var(--font-mono);font-size:12px">'+esc(r.type)+'</td>';
+    h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════
+   CLOSED
+══════════════════════════════════════════════════════ */
+function renderClosed(){
+  var refs=(DATA.referrals||[]).filter(isClosed);
+  var h='<div class="eyebrow">Cases</div><h1>Closed</h1>';
+  h+='<p style="color:var(--muted);margin:4px 0 20px">Referrals rejected or closed due to non-engagement.</p>';
+  if(!refs.length){h+='<div class="card placeholder"><div class="pic">'+ic('x',32)+'</div><b>No closed cases</b></div>';return h;}
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th><th>Status</th></tr></thead><tbody>';
+  refs.forEach(function(r){
+    h+='<tr onclick="go(\'detail\',\''+r.ref+'\')"><td class="r-ref">'+esc(r.ref)+'</td>';
+    h+='<td><span class="r-name">'+esc(r.name)+'</span></td>';
+    h+='<td class="r-muted">'+esc(r.borough)+'</td><td class="r-muted" style="font-family:var(--font-mono);font-size:12px">'+esc(r.type)+'</td>';
+    h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
