@@ -13,7 +13,7 @@ function renderSidebar(){
   var waitListCount=refs.filter(isWaitingList).length;
   var benCount=refs.filter(isBeneficiary).length;
   var closedCount=refs.filter(isClosed).length;
-  var wbCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
+  var wbCount=getAllTasks().length; /* unified task count */
 
   /* Active-state groups */
   var dashViews=['dashboard','today','overview'];
@@ -123,13 +123,13 @@ function closingIn(month,year){
 /* ── Overview tab ── */
 function renderDashOverview(refs,todayStr){
   var h='';
-  var actions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
-  var overdue=actions.filter(function(a){return a.dueBy&&a.dueBy<todayStr;});
+  var actions=getAllTasks();
+  var overdue=actions.filter(function(a){return a.task.due&&a.task.due<todayStr;});
 
   /* Overdue alert */
   if(overdue.length){
     h+='<div class="alert-banner"><div class="ah">'+ic('warn',16)+overdue.length+' overdue task'+(overdue.length>1?'s':'')+' need attention</div>';
-    overdue.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+' <span style="color:var(--red);font-size:11.5px">Due '+fmtDate(a.dueBy)+'</span></div>';});
+    overdue.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.task.note)+' <span style="color:var(--red);font-size:11.5px">Due '+fmtDate(a.task.due)+'</span></div>';});
     h+='</div>';
   }
 
@@ -137,7 +137,7 @@ function renderDashOverview(refs,todayStr){
   function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
   var now=new Date();
   var dueToCloseCount=closingIn(MONTHS[now.getMonth()],now.getFullYear()).length+closingIn(MONTHS[(now.getMonth()+1)%12],(now.getMonth()+1)%12===0?now.getFullYear()+1:now.getFullYear()).length;
-  var taskCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
+  var taskCount=getAllTasks().length;
   var benTotal=refs.filter(isBeneficiary).length;
 
   h+='<div class="pipeline" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">';
@@ -218,7 +218,7 @@ function renderDashActions(refs,todayStr){
     /* Count indicators for this day */
     var dayApptCount=refs.filter(function(r){return r.apptDate&&r.apptDate===dStr;}).length;
     var dayCollCount=(DATA.collections||[]).filter(function(c){return c.date===dStr;}).length;
-    var dayActionCount=(DATA.actions||[]).filter(function(a){return a.status!=='done'&&a.dueBy&&a.dueBy===dStr;}).length;
+    var dayActionCount=getAllTasks().filter(function(a){return a.task.due&&a.task.due===dStr;}).length;
 
     var cls='day-pill'+(isSelected?' selected':'')+(isToday?' today-pill':'');
     h+='<div class="'+cls+'" onclick="STATE.selectedDay=\''+dStr+'\';render()">';
@@ -286,16 +286,16 @@ function renderDashActions(refs,todayStr){
   }
 
   /* Outstanding actions — full width, with sort + volunteer filter */
-  var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
+  var allActions=getAllTasks();
   /* Volunteer filter */
-  var volSet={};allActions.forEach(function(a){if(a.officer)volSet[a.officer]=true;});
+  var volSet={};allActions.forEach(function(a){if(a.task.owner)volSet[a.task.owner]=true;});
   var volNames=['All'].concat(Object.keys(volSet).sort());
-  var filteredActions=STATE.actionVolFilter==='All'?allActions:allActions.filter(function(a){return a.officer===STATE.actionVolFilter;});
+  var filteredActions=STATE.actionVolFilter==='All'?allActions:allActions.filter(function(a){return a.task.owner===STATE.actionVolFilter;});
   /* Sort */
   var aSortDir=STATE.actionSortDir==='desc'?-1:1;
-  if(STATE.actionSort==='date'){filteredActions.sort(function(a,b){return((a.dueBy||'9').localeCompare(b.dueBy||'9'))*aSortDir;});}
+  if(STATE.actionSort==='date'){filteredActions.sort(function(a,b){return((a.task.due||'9').localeCompare(b.task.due||'9'))*aSortDir;});}
   else if(STATE.actionSort==='name'){filteredActions.sort(function(a,b){return((a.name||'').localeCompare(b.name||''))*aSortDir;});}
-  else if(STATE.actionSort==='officer'){filteredActions.sort(function(a,b){return((a.officer||'').localeCompare(b.officer||''))*aSortDir;});}
+  else if(STATE.actionSort==='officer'){filteredActions.sort(function(a,b){return((a.task.owner||'').localeCompare(b.task.owner||''))*aSortDir;});}
 
   h+='<div class="card" style="padding:0;overflow:hidden;margin-top:20px">';
   h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
@@ -321,13 +321,13 @@ function renderDashActions(refs,todayStr){
     h+=actSortHdr('officer','Officer');
     h+='<th></th></tr></thead><tbody>';
     filteredActions.forEach(function(a){
-      var ov=a.dueBy&&a.dueBy<todayStr;
-      h+='<tr onclick="go(\'detail\',\''+a.ref+'\')"'+(ov?' class="dna-table-row"':'')+'>';
+      var ov=a.task.due&&a.task.due<todayStr;
+      h+='<tr onclick="openWbFile(\''+a.ref+'\',2)" style="cursor:pointer"'+(ov?' class="dna-table-row"':'')+'>';
       h+='<td class="r-ref" style="font-size:11px">'+esc(a.ref)+'</td>';
       h+='<td style="font-weight:500">'+esc(a.name)+(ov?' <span class="overdue-tag">Overdue</span>':'')+'</td>';
-      h+='<td class="r-muted" style="font-size:13px">'+esc(a.action)+'</td>';
-      h+='<td class="r-muted" style="white-space:nowrap">'+fmtDate(a.dueBy||'—')+'</td>';
-      h+='<td class="r-muted">'+esc(a.officer)+'</td>';
+      h+='<td class="r-muted" style="font-size:13px">'+esc(a.task.note)+'</td>';
+      h+='<td class="r-muted" style="white-space:nowrap">'+fmtDate(a.task.due||'—')+'</td>';
+      h+='<td class="r-muted">'+esc(a.task.owner)+'</td>';
       h+='<td style="color:var(--faint)">'+ic('chevron-right',14)+'</td></tr>';
     });
     h+='</tbody></table>';
