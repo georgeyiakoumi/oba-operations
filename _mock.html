@@ -73,10 +73,8 @@ function boroughBreakdown(){
   var refs=DATA.referrals||[];
   var CATCHMENT=['Lambeth','Southwark','Wandsworth','Croydon'];
   var COLORS={Lambeth:'#557a16',Southwark:'#8d2b5f',Wandsworth:'#c06e14',Croydon:'#2a6a9a'};
-  var CLASSES={Lambeth:'lambeth',Southwark:'southwark',Wandsworth:'wandsworth',Croydon:'croydon'};
-  var LAMBETH_MIN=76; // 76% minimum Lambeth threshold per SOP
+  var LAMBETH_MIN=76;
 
-  // Count all referrals in catchment (open to wellbeing = active/complete statuses, or all — use all for triage purposes)
   var counts={};CATCHMENT.forEach(function(b){counts[b]=0;});
   refs.forEach(function(r){if(counts[r.borough]!==undefined)counts[r.borough]++;});
   var total=CATCHMENT.reduce(function(s,b){return s+(counts[b]||0);},0);
@@ -85,77 +83,78 @@ function boroughBreakdown(){
   var lambethN=counts['Lambeth']||0;
   var lambethPct=total?Math.round(lambethN/total*100):0;
   var lambethOk=lambethPct>=LAMBETH_MIN;
-
-  // Max additional non-Lambeth before Lambeth % drops under threshold:
-  // lambethN / (total + X) >= 0.76  →  X <= lambethN/0.76 - total
+  var lambethClose=lambethPct>=LAMBETH_MIN-10&&!lambethOk;
   var maxNonLambeth=Math.max(0,Math.floor(lambethN/(LAMBETH_MIN/100))-total);
 
-  // Provisional state (inputs stored in DATA.provCounts)
+  /* Provisional state */
   var prov=DATA.provCounts||{Lambeth:0,Southwark:0,Wandsworth:0,Croydon:0};
-  var provTotal=CATCHMENT.reduce(function(s,b){return s+(prov[b]||0);},0);
-  var provLambeth=(lambethN+(prov.Lambeth||0));
-  var provTotalAll=total+provTotal;
+  var provLambethExtra=prov.Lambeth||0;
+  var provOtherExtra=(prov.Southwark||0)+(prov.Wandsworth||0)+(prov.Croydon||0);
+  var provLambeth=lambethN+provLambethExtra;
+  var provTotalAll=total+provLambethExtra+provOtherExtra;
   var provPct=provTotalAll?Math.round(provLambeth/provTotalAll*100):lambethPct;
-  var provOk=provPct>=LAMBETH_MIN;
-  var showProvisional=provTotal>0;
+  var showProvisional=provLambethExtra>0||provOtherExtra>0;
 
-  // ── Borough boxes ──
-  var h='<div>';
-  h+='<div class="bor-row">';
+  var h='<div class="overview-stats">';
+
+  /* ── Donut chart card ── */
+  h+='<div class="card donut-card">';
+  h+='<div style="font-weight:600;font-size:15px;margin-bottom:16px;align-self:flex-start">Borough Breakdown</div>';
+  /* SVG donut */
+  var R=70,CX=90,CY=90,CIRC=2*Math.PI*R;
+  h+='<div class="donut-wrap"><svg viewBox="0 0 180 180">';
+  var offset=0;
   CATCHMENT.forEach(function(b){
     var n=counts[b]||0;
-    var pct=total?Math.round(n/total*100):0;
-    var isLambeth=(b==='Lambeth');
-    var pctColor=isLambeth?(lambethOk?'var(--green)':'var(--red)'):COLORS[b];
-    h+='<div class="bor-box '+CLASSES[b]+'">';
-    h+='<div class="bor-label">'+b+'</div>';
-    h+='<div class="bor-count">'+n+' <span style="font-size:14px;font-weight:500;color:var(--muted)">referrals</span></div>';
-    h+='<div class="bor-pct" style="color:'+pctColor+'">'+pct+'%</div>';
-    if(isLambeth)h+='<div class="bor-sub '+(lambethOk?'bor-ok':'bor-warn')+'">'+(lambethOk?'✓ Above 76% threshold':'⚠ Below 76% threshold')+'</div>';
-    else h+='<div class="bor-sub">of all referrals</div>';
-    if(showProvisional&&(prov[b]||0)>0)h+='<div class="bor-sub" style="color:var(--green)">+'+prov[b]+' pending</div>';
-    h+='</div>';
+    if(n===0)return;
+    var seg=n/total*CIRC;
+    h+='<circle cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="none" stroke="'+COLORS[b]+'" stroke-width="24" stroke-dasharray="'+seg+' '+(CIRC-seg)+'" stroke-dashoffset="'+(-offset)+'" transform="rotate(-90 '+CX+' '+CY+')" />';
+    offset+=seg;
   });
-  h+='<div class="bor-box" style="border-color:var(--line-soft);background:var(--cream)">';
-  h+='<div class="bor-label">Total</div>';
-  h+='<div class="bor-count">'+total+'</div>';
-  h+='<div class="bor-pct" style="color:var(--muted);font-size:18px">referrals</div>';
-  if(showProvisional)h+='<div class="bor-sub" style="color:var(--green)">+'+provTotal+' pending</div>';
+  h+='</svg>';
+  h+='<div class="donut-center"><span class="dc-num">'+total+'</span><span class="dc-label">referrals</span></div>';
   h+='</div>';
-  h+='</div>';
-
-  // ── Capacity box ──
-  h+='<div class="cap-box">';
-  h+='<div class="cap-title">Lambeth capacity rule — max '+LAMBETH_MIN+'% non-Lambeth</div>';
-  h+='<div class="cap-result '+(lambethOk?'ok':'warn')+'">';
-  if(lambethOk){
-    h+=ic('check',15)+' Lambeth is at '+lambethPct+'% — within threshold. ';
-    h+=maxNonLambeth===0?'Adding any non-Lambeth referral will breach 76%.':'You can accept up to <b>'+maxNonLambeth+' more non-Lambeth</b> referral'+(maxNonLambeth>1?'s':'')+" before Lambeth drops below 76%.";
-  }else{
-    h+=ic('warn',15)+' Lambeth is at '+lambethPct+'% — <b>below the 76% threshold</b>. Prioritise Lambeth referrals to restore balance.';
-  }
-  h+='</div>';
-
-  // ── Provisional calculator ──
-  h+='<details style="cursor:pointer"><summary style="font-size:13.5px;color:var(--green-deep);font-weight:500;user-select:none;padding:2px 0">'+ic('cal',14)+' Provisional: add pending registrations to see projected %</summary>';
-  h+='<p style="font-size:12.5px;color:var(--muted);margin:8px 0 6px">Enter how many people from each borough are completing registration this session:</p>';
-  h+='<div class="prov-grid">';
+  /* Legend */
+  h+='<div class="donut-legend">';
   CATCHMENT.forEach(function(b){
-    h+='<div class="prov-inp"><label>'+b+'</label>';
-    h+='<input type="number" min="0" value="'+(prov[b]||0)+'" onchange="DATA.provCounts=DATA.provCounts||{};DATA.provCounts.'+b+'=parseInt(this.value)||0;render()">';
-    h+='</div>';
+    h+='<div class="dl-item"><span class="dl-dot" style="background:'+COLORS[b]+'"></span>'+b+' <span class="dl-count">'+counts[b]+'</span></div>';
   });
+  h+='</div>';
+  h+='</div>';
+
+  /* ── Lambeth threshold card ── */
+  var statusLabel=lambethOk?'Met':lambethClose?'Close':'Below';
+  var statusCls=lambethOk?'th-badge-met':lambethClose?'th-badge-close':'th-badge-below';
+  var barColor=lambethOk?'var(--green)':lambethClose?'var(--orange)':'var(--red)';
+
+  h+='<div class="card threshold-card">';
+  h+='<div class="th-header"><span class="th-title">Lambeth Target</span><span class="th-badge '+statusCls+'">'+statusLabel+'</span></div>';
+  h+='<div class="th-pct" style="color:'+barColor+'">'+lambethPct+'%</div>';
+  h+='<div class="th-sub">of '+LAMBETH_MIN+'% target</div>';
+
+  /* Progress bar */
+  h+='<div class="th-bar-wrap">';
+  h+='<div class="th-bar-fill" style="width:'+Math.min(lambethPct,100)+'%;background:'+barColor+'"></div>';
+  if(showProvisional)h+='<div class="th-bar-proj" style="width:'+Math.min(provPct,100)+'%;background:'+barColor+'"></div>';
+  h+='<div class="th-bar-marker" style="left:'+LAMBETH_MIN+'%"></div>';
+  h+='</div>';
+  h+='<div class="th-bar-label" style="margin-left:'+LAMBETH_MIN+'%;transform:translateX(-50%)">'+LAMBETH_MIN+'%</div>';
+
+  /* Provisional inputs */
+  h+='<div class="th-inputs">';
+  h+='<div><label>+ Lambeth</label><input type="number" min="0" value="'+provLambethExtra+'" onchange="DATA.provCounts=DATA.provCounts||{Lambeth:0,Southwark:0,Wandsworth:0,Croydon:0};DATA.provCounts.Lambeth=parseInt(this.value)||0;render()"></div>';
+  h+='<div><label>+ Other boroughs</label><input type="number" min="0" value="'+provOtherExtra+'" onchange="DATA.provCounts=DATA.provCounts||{Lambeth:0,Southwark:0,Wandsworth:0,Croydon:0};var v=parseInt(this.value)||0;DATA.provCounts.Southwark=v;DATA.provCounts.Wandsworth=0;DATA.provCounts.Croydon=0;render()"></div>';
   h+='</div>';
   if(showProvisional){
-    var newMaxNL=Math.max(0,Math.floor(provLambeth/(LAMBETH_MIN/100))-provTotalAll);
-    h+='<div class="prov-result">';
-    h+='If all '+provTotal+' pending registrations complete: ';
-    h+='Lambeth would be <b style="color:'+(provOk?'var(--green)':'var(--red)')+'">'+provPct+'%</b> of '+provTotalAll+' total. ';
-    if(provOk){h+='<span style="color:var(--green)">✓ Still above threshold.</span> Could take up to '+newMaxNL+' more non-Lambeth.';}
-    else{h+='<span style="color:var(--red)">⚠ Would fall below 76%. Consider adding more Lambeth referrals.</span>';}
-    h+='</div>';
+    h+='<div class="th-footer" style="margin-top:8px">Projected: <b style="color:'+barColor+'">'+provPct+'%</b> of '+provTotalAll+' total</div>';
   }
-  h+='</details>';
+
+  /* Footer info */
+  h+='<div class="th-footer">';
+  if(lambethOk){h+='Headroom: <b>'+maxNonLambeth+'</b> non-Lambeth referral'+(maxNonLambeth!==1?'s':'');}
+  else{var needed=Math.ceil((LAMBETH_MIN/100*total-lambethN)/(1-LAMBETH_MIN/100));h+='Need <b>'+Math.max(needed,1)+'</b> more Lambeth referral'+(needed>1?'s':'');}
+  h+='</div>';
+
   h+='</div>';
   h+='</div>';
   return h;
