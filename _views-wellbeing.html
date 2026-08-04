@@ -109,7 +109,7 @@ function renderWellbeing(){
   if(STATE.wbRef) return renderWbFile(getRef(STATE.wbRef));
   // top-level tabs: Overview | All Cases | To-do / Notes
   var tabLabels=[['star','Overview'],['users','All Cases'],['note','To-do / Notes']];
-  var h='<div class="eyebrow">Wellbeing</div><div class="head-row" style="margin-bottom:0">';
+  var h='<div class="head-row" style="margin-bottom:0">';
   h+='<h1>Wellbeing</h1>';
   h+='<button class="btn btn-ghost" onclick="WB_UNLOCKED=false;render()" style="white-space:nowrap">'+ic('lock',15)+'Lock</button></div>';
   h+='<div class="wb-top-tabs">';
@@ -546,7 +546,7 @@ function saveWb(ref){var wf=getWelfare(getRef(ref));var json=JSON.stringify(wf);
 /* ══════════════════════════════════════════════════════
    PLACEHOLDER VIEWS
 ══════════════════════════════════════════════════════ */
-function renderPlaceholder(title,iconKey,desc){return'<div class="eyebrow">Operations Suite</div><h1>'+title+'</h1><p style="color:var(--muted);margin-bottom:22px">'+desc+'</p><div class="card placeholder"><div class="pic">'+ic(iconKey,32)+'</div><b>'+title+' — coming soon</b><p style="margin-top:8px;max-width:440px;margin-left:auto;margin-right:auto">This section is scaffolded for the developer to build out.</p></div>';}
+function renderPlaceholder(title,iconKey,desc){return'<h1>'+title+'</h1><p style="color:var(--muted);margin-bottom:22px">'+desc+'</p><div class="card placeholder"><div class="pic">'+ic(iconKey,32)+'</div><b>'+title+' — coming soon</b><p style="margin-top:8px;max-width:440px;margin-left:auto;margin-right:auto">This section is scaffolded for the developer to build out.</p></div>';}
 
 /* ══════════════════════════════════════════════════════
    ROUTER + BOOT

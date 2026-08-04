@@ -73,7 +73,7 @@
   --line: #e6e4d7;
   --line-soft: #eeece2;
   --radius: 12px;
-  --shadow: 0 1px 2px rgba(35, 42, 23, .05), 0 4px 16px rgba(35, 42, 23, .045);
+  --shadow: 0 1px 3px rgba(35, 42, 23, .04), 0 2px 8px rgba(35, 42, 23, .03);
 
   /* ── Flag colours ── */
   --flag-dis-bg: #ddeef8;
@@ -145,7 +145,7 @@ h2 {
 /* ── SIDEBAR ── */
 
 .sidebar {
-  width: 240px;
+  width: 250px;
   flex-shrink: 0;
   background: var(--sidebar);
   border-right: 1px solid var(--line);
@@ -209,8 +209,8 @@ h2 {
 }
 
 .nav-item:hover { background: var(--sidebar-hov); color: var(--ink) }
-.nav-item.active, .nav-item.active-parent { color: var(--green-deep); font-weight: 600 }
-.nav-item.active .nav-ic, .nav-item.active-parent .nav-ic { color: var(--sidebar-active) }
+.nav-item.active, .nav-item.active-parent { color: var(--green-deep); font-weight: 600; background: var(--green-chip-bg) }
+.nav-item.active .nav-ic, .nav-item.active-parent .nav-ic { color: var(--green) }
 .nav-ic { width: 17px; text-align: center; flex-shrink: 0; color: var(--faint) }
 .nav-item.active .nav-ic, .nav-item.active-parent .nav-ic { color: var(--green) }
 .nav-lbl { flex: 1 }
@@ -284,7 +284,7 @@ h2 {
 
 /* ── MAIN ── */
 
-.main { flex: 1; min-width: 0; padding: 28px 38px 70px }
+.main { flex: 1; min-width: 0; padding: 32px 44px 70px }
 
 
 /* ── CARDS ── */
@@ -463,11 +463,15 @@ select.filter-sel {
 .rtable th.sorted .sort-arrow { color: var(--green) }
 
 .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center }
-.toggle-group { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
-.toggle-group button { background: var(--card); border: 0; border-right: 1px solid var(--line); padding: 7px 14px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap }
+.toggle-group { display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden }
+.toggle-group button { background: var(--card); border: 0; border-right: 1px solid var(--line); padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; transition: background .1s }
 .toggle-group button:last-child { border-right: 0 }
-.toggle-group button:hover { background: var(--hover) }
-.toggle-group button.on { background: var(--green); color: #fff }
+.toggle-group button:hover { background: var(--hover); color: var(--ink) }
+.toggle-group button.on { background: var(--green-deep); color: #fff }
+
+.type-badge { font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: .03em }
+.type-standard { background: var(--grey-bg); color: var(--grey-tx) }
+.type-emergency { background: var(--red-bg); color: var(--red) }
 
 .r-ref { font-family: var(--font-mono); font-size: 13px; color: var(--green-bright); font-weight: 500 }
 .r-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap }
@@ -567,10 +571,10 @@ select.filter-sel {
 .stage-bar { height: 4px; border-radius: 2px; margin-bottom: 10px }
 
 /* Dashboard tabs */
-.dash-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--line); margin-bottom: 24px }
-.dash-tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 13px 22px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: -2px; white-space: nowrap }
+.dash-tabs { display: inline-flex; gap: 4px; background: var(--secondary, #f0efe8); border-radius: var(--radius); padding: 4px; margin-bottom: 24px }
+.dash-tab { background: none; border: 0; border-radius: calc(var(--radius) - 4px); padding: 10px 20px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: all .15s }
 .dash-tab:hover { color: var(--ink) }
-.dash-tab.on { color: var(--green-deep); border-bottom-color: var(--green); font-weight: 600 }
+.dash-tab.on { background: var(--card); color: var(--green-deep); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08) }
 
 /* Week picker */
 .week-picker { display: flex; align-items: center; gap: 10px; margin-bottom: 20px }
@@ -592,8 +596,15 @@ select.filter-sel {
 .day-col .dc-empty { font-size: 12px; color: var(--faint); font-style: italic }
 
 /* Closing summary */
-.closing-card { background: var(--orange-bg); border: 1px solid #e8d5b5; border-radius: var(--radius); padding: 18px 22px; margin-bottom: 20px }
-.closing-card .cc-head { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--orange); margin-bottom: 8px }
+.closing-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow) }
+.closing-card .cc-head { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); margin-bottom: 14px; font-size: 16px }
+.closing-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }
+.closing-col .cc-month { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; display: flex; align-items: center; gap: 8px }
+.closing-col .cc-month .cc-count { background: var(--orange-bg); color: var(--orange); font-size: 11px; padding: 2px 7px; border-radius: 5px; font-weight: 600 }
+.closing-col .cc-borough { font-size: 12px; font-weight: 600; color: var(--muted); margin: 10px 0 4px; display: flex; align-items: center; gap: 6px }
+.closing-col .cc-ref { font-size: 13px; padding: 4px 0; cursor: pointer; display: flex; gap: 8px }
+.closing-col .cc-ref:hover { color: var(--green) }
+.closing-col .cc-ref .cc-refnum { font-family: var(--font-mono); font-size: 12px; color: var(--green-bright) }
 
 
 /* ── ALERT BANNER ── */
