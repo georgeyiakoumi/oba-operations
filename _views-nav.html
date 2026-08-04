@@ -127,25 +127,41 @@ function renderDashOverview(refs,todayStr){
   /* Borough breakdown */
   h+='<div style="margin-bottom:22px">'+boroughBreakdown()+'</div>';
 
-  /* Cases due to close this month */
-  var thisMonth=MONTHS[new Date().getMonth()];
-  var thisYear=new Date().getFullYear();
-  var closing=refs.filter(function(r){
-    if(!r.openTo)return false;
-    return r.openTo.indexOf(thisMonth)===0&&r.openTo.indexOf(thisYear+'')>0&&BENEFICIARY_STATUSES.indexOf(r.status)>=0;
-  });
-  if(closing.length){
-    h+='<div class="closing-card"><div class="cc-head">'+ic('clock',16)+closing.length+' due to close ('+thisMonth+' '+thisYear+')</div>';
-    closing.forEach(function(r){
-      h+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px;cursor:pointer" onclick="go(\'detail\',\''+r.ref+'\')">';
-      h+='<span class="r-ref">'+esc(r.ref)+'</span>';
-      h+='<span style="font-weight:500;flex:1">'+esc(r.name)+'</span>';
-      h+='<span class="r-muted">'+esc(r.borough)+'</span>';
-      h+='<span class="r-muted">'+esc(r.openFrom)+' – '+esc(r.openTo)+'</span>';
-      h+=renderFlags(r,{showFinal:true});
-      h+='</div>';
+  /* Due to close — two-column (this month + next month) grouped by borough */
+  var now=new Date();
+  var thisMonth=MONTHS[now.getMonth()];var thisYear=now.getFullYear();
+  var nextMonthIdx=(now.getMonth()+1)%12;var nextMonth=MONTHS[nextMonthIdx];
+  var nextYear=nextMonthIdx===0?thisYear+1:thisYear;
+
+  function closingIn(month,year){
+    return refs.filter(function(r){
+      if(!r.openTo||BENEFICIARY_STATUSES.indexOf(r.status)<0)return false;
+      return r.openTo.indexOf(month)===0&&r.openTo.indexOf(year+'')>0;
     });
-    h+='</div>';
+  }
+  var closingThis=closingIn(thisMonth,thisYear);
+  var closingNext=closingIn(nextMonth,nextYear);
+
+  function renderClosingCol(list,monthLabel){
+    if(!list.length)return '<div class="closing-col"><div class="cc-month">'+monthLabel+'<span class="cc-count">0</span></div><p style="color:var(--faint);font-size:13px">No cases due to close.</p></div>';
+    var grouped={};list.forEach(function(r){(grouped[r.borough]=grouped[r.borough]||[]).push(r);});
+    var h='<div class="closing-col"><div class="cc-month">'+monthLabel+'<span class="cc-count">'+list.length+'</span></div>';
+    ['Lambeth','Southwark','Wandsworth','Croydon'].forEach(function(b){
+      var bList=grouped[b];if(!bList)return;
+      h+='<div class="cc-borough">'+b+'</div>';
+      bList.forEach(function(r){
+        h+='<div class="cc-ref" onclick="go(\'detail\',\''+r.ref+'\')"><span class="cc-refnum">'+r.ref.replace('REF-','')+'</span>'+esc(r.name)+'</div>';
+      });
+    });
+    h+='</div>';return h;
+  }
+
+  if(closingThis.length||closingNext.length){
+    h+='<div class="closing-card"><div class="cc-head">'+ic('calendar-off',18)+'Due to close</div>';
+    h+='<div class="closing-cols">';
+    h+=renderClosingCol(closingThis,thisMonth+' '+thisYear);
+    h+=renderClosingCol(closingNext,nextMonth+' '+nextYear);
+    h+='</div></div>';
   }
 
   /* Quick links */
@@ -267,6 +283,24 @@ function renderDashActions(refs,todayStr){
     });
     h+='</div>';
   }
+
+  /* New referrals awaiting triage */
+  var newRefs=refs.filter(isNewRef);
+  if(newRefs.length){
+    h+='<h2 style="margin-top:20px;margin-bottom:10px">'+ic('user-plus',16)+' New referrals awaiting triage</h2>';
+    h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th></tr></thead><tbody>';
+    newRefs.forEach(function(r){
+      var typeCls=r.type==='EMERGENCY'?'type-emergency':'type-standard';
+      h+='<tr onclick="go(\'detail\',\''+r.ref+'\')">';
+      h+='<td class="r-ref">'+esc(r.ref.replace('REF-',''))+'</td>';
+      h+='<td><span class="r-name">'+esc(r.name)+'</span></td>';
+      h+='<td class="r-muted">'+esc(r.borough)+'</td>';
+      h+='<td><span class="type-badge '+typeCls+'">'+(r.type==='EMERGENCY'?'Emergency':'Standard')+'</span></td>';
+      h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+
   return h;
 }
 
@@ -513,14 +547,21 @@ function renderBen(){
   h+='<select class="filter-sel" onchange="STATE.benBorough=this.value;render()"><option value="all">All boroughs</option>';
   ['Lambeth','Southwark','Wandsworth','Croydon'].forEach(function(b){h+='<option value="'+b+'" '+(STATE.benBorough===b?'selected':'')+'>'+b+'</option>';});
   h+='</select><span style="color:var(--muted);font-size:13px;margin-left:auto">'+refs.length+' shown</span></div>';
-  if(!refs.length){h+='<div class="card placeholder">No beneficiaries match.</div>';return h;}
-  h+='<div class="card">';
+  if(!refs.length){h+='<div class="card placeholder">No beneficiaries match your filters.</div>';return h;}
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Status</th><th>Support Period</th><th>Distribution</th></tr></thead><tbody>';
   refs.forEach(function(r){
-    var flags=flagList(r),init=(r.name||'?').trim().charAt(0).toUpperCase();
     var tags=renderFlags(r,{showEmerg:true,showFinal:true});
-    h+='<div class="bene-card" onclick="openBeneFile(\''+r.ref+'\')"><div class="bene-avatar">'+esc(init)+'</div><div class="bene-info"><div class="bene-name">'+esc(r.name)+' '+tags+'</div><div class="bene-meta">'+esc(r.ref)+' · '+esc(r.borough)+' · '+hhWords(r)+(r.openFrom?' · Open '+monthsOpen(r):'')+'</div></div>'+statusPill(r)+'<span style="color:var(--faint);margin-left:8px">'+ic('arrow')+'</span></div>';
+    var dist=(r.distributionGroup||'')+(r.distributionType?' · '+r.distributionType:'');
+    h+='<tr onclick="openBeneFile(\''+r.ref+'\')">';
+    h+='<td class="r-ref">'+esc(r.ref.replace('REF-',''))+'</td>';
+    h+='<td><span class="r-name">'+tags+esc(r.name)+'</span></td>';
+    h+='<td class="r-muted">'+esc(r.borough)+'</td>';
+    h+='<td>'+statusPill(r)+'</td>';
+    h+='<td class="r-muted">'+esc(monthsOpen(r))+'</td>';
+    h+='<td class="r-muted">'+esc(dist||'—')+'</td>';
+    h+='</tr>';
   });
-  h+='</div>';
+  h+='</tbody></table></div>';
   return h;
 }
 console.log('OBA views part A loaded');
