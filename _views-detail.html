@@ -170,7 +170,7 @@ function renderStepReferralInfo(r){
       h+='<div style="border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;overflow:hidden">';
       h+='<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f9f8f2;border-bottom:1px solid var(--line)">';
       h+=ic('ref',15)+'<span style="font-family:\'IBM Plex Mono\';font-size:13px;color:var(--green-bright);font-weight:500">'+esc(x.ref||'Historical')+'</span>';
-      h+='<span style="color:var(--muted);font-size:13px">'+esc(isHist?x.household:x.name)+' · '+(isHist?x.openFrom+' – '+x.openTo:x.receivedDate)+'</span>';
+      h+='<span style="color:var(--muted);font-size:13px">'+esc(isHist?x.household:x.name)+' · '+(isHist?x.openFrom+' – '+x.openTo:fmtDate(x.receivedDate))+'</span>';
       if(isHist)h+='<span style="font-family:\'IBM Plex Mono\';font-size:10px;background:var(--grey-bg);color:var(--grey-tx);padding:2px 7px;border-radius:5px">Previous</span>';
       h+='</div>';
       h+='<div class="compare-grid">';

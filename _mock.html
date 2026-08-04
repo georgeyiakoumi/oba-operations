@@ -216,15 +216,19 @@ function getWelfare(r){if(!r._wf){try{r._wf=JSON.parse(r.welfareJson||'{}')||{};
 function surnameFirst(r){return(r.name||'').toUpperCase();}
 function monthsOpen(r){if(r.openFrom&&r.openTo)return r.openFrom+'–'+r.openTo;return '—';}
 function fmtDate(s){
-  /* Convert stored date strings (e.g. "06 Jan", "06 Jan 2026") to dd/mm/yyyy */
+  /* Convert any date string to "1 Jul 2026" format */
   if(!s)return '—';
-  var months={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  var MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  /* ISO format: 2026-08-04 */
+  var iso=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(iso){return parseInt(iso[3])+' '+MNAMES[parseInt(iso[2])-1]+' '+iso[1];}
+  /* "06 Jan" or "06 Jan 2026" */
   var m=s.match(/^(\d{1,2})\s+([A-Za-z]{3})(?:\s+(\d{4}))?$/);
-  if(!m)return s;
-  var day=m[1].padStart(2,'0');
-  var mon=months[m[2]]||'??';
-  var yr=m[3]||new Date().getFullYear();
-  return day+'/'+mon+'/'+yr;
+  if(m){return parseInt(m[1])+' '+m[2]+' '+(m[3]||new Date().getFullYear());}
+  /* "dd Mon" from relDate — e.g. "03 Aug" */
+  var rd=s.match(/^(\d{2})\s+([A-Za-z]{3})$/);
+  if(rd){return parseInt(rd[1])+' '+rd[2]+' '+new Date().getFullYear();}
+  return s;
 }
 function isFinalMonth(r){return r.openTo&&r.openTo===MONTHS[new Date().getMonth()]&&BENEFICIARY_STATUSES.indexOf(r.status)>=0;}
 function statusPill(r){var m=statusMeta(r.status);return '<span class="status-pill '+m.tone+'"><span class="dot"></span>'+esc(r.status)+'</span>';}

@@ -129,7 +129,7 @@ function renderDashOverview(refs,todayStr){
   /* Overdue alert */
   if(overdue.length){
     h+='<div class="alert-banner"><div class="ah">'+ic('warn',16)+overdue.length+' overdue task'+(overdue.length>1?'s':'')+' need attention</div>';
-    overdue.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+' <span style="color:var(--red);font-size:11.5px">Due '+esc(a.dueBy)+'</span></div>';});
+    overdue.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+' <span style="color:var(--red);font-size:11.5px">Due '+fmtDate(a.dueBy)+'</span></div>';});
     h+='</div>';
   }
 
@@ -455,7 +455,7 @@ function renderNewReferrals(){
     h+='<tr onclick="go(\'detail\',\''+r.ref+'\')"><td class="r-ref">'+esc(r.ref)+'</td>';
     h+='<td><span class="r-name">'+esc(r.name)+(emerg?' <span class="flag-tag flag-emerg">Emergency</span>':'')+'</span></td>';
     h+='<td class="r-muted">'+esc(r.borough)+'</td><td class="r-muted" style="font-family:\'IBM Plex Mono\';font-size:12px">'+esc(r.type)+'</td>';
-    h+='<td class="r-muted">'+esc(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
+    h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
   });
   h+='</tbody></table></div>';
   return h;
@@ -544,7 +544,7 @@ function renderRegistrations(){
     dna.forEach(function(r){
       h+='<div class="dna-row"><div class="bene-avatar" style="width:36px;height:36px;font-size:13px;background:var(--red-bg);color:var(--red)">'+esc(r.name.charAt(0))+'</div>';
       h+='<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14.5px">'+esc(r.name)+'</div>';
-      h+='<div style="font-size:12.5px;color:var(--muted)">'+esc(r.ref)+' · '+esc(r.borough)+' · Received '+esc(r.receivedDate)+'</div></div>';
+      h+='<div style="font-size:12.5px;color:var(--muted)">'+esc(r.ref)+' · '+esc(r.borough)+' · Received '+fmtDate(r.receivedDate)+'</div></div>';
       h+=statusPill(r);
       h+='<button class="btn btn-ghost" style="font-size:13px;padding:8px 14px" onclick="go(\'detail\',\''+r.ref+'\')">';
       h+=ic('cal',14)+'Rebook</button></div>';
