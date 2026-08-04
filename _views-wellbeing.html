@@ -189,7 +189,7 @@ function renderWbOverview(){
       h+='<span class="tr-area'+(isPast?' overdue':'')+'">'+esc(t.area)+'</span>';
       h+='<div class="tr-name">'+esc(t.name)+'<div style="font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px">'+esc(t.tk.note||'No note')+'</div></div>';
       h+='<span class="tr-vol">'+esc(t.tk.owner||'Unassigned')+'</span>';
-      h+='<span class="tr-due'+(isPast?' past':'')+'">'+ic('clock',13)+(t.tk.due?esc(t.tk.due):'No date')+'</span>';
+      h+='<span class="tr-due'+(isPast?' past':'')+'">'+ic('clock',13)+(t.tk.due?fmtDate(t.tk.due):'No date')+'</span>';
       h+='<span style="color:var(--faint)">'+ic('arrow')+'</span></div>';
     });
     h+='</div>';
@@ -421,7 +421,7 @@ function renderWbFileOverview(r,wf,openTasks,doneTasks){
     myActions.forEach(function(a){
       h+='<div class="action-card pri-'+esc(a.priority)+'"><div class="action-ic">'+ic(a.priority==='urgent'?'warn':'clock',16)+'</div>';
       h+='<div class="action-body"><div class="action-top"><span class="pri-tag">'+esc(a.priority)+'</span><span style="font-weight:600">'+esc(a.action)+'</span></div>';
-      h+='<div class="action-meta"><span>'+ic('clock',13)+' Due: '+esc(a.dueBy)+'</span><span>Officer: '+esc(a.officer)+'</span></div></div>';
+      h+='<div class="action-meta"><span>'+ic('clock',13)+' Due: '+fmtDate(a.dueBy)+'</span><span>Officer: '+esc(a.officer)+'</span></div></div>';
       h+='<button class="action-done" onclick="completeActionUI(\''+a.actionId+'\')">Mark done</button></div>';
     });
     h+='</div>';
