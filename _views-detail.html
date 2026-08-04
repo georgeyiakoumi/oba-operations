@@ -48,7 +48,6 @@ function renderDetail(){
   /* status select in top right */
   h+='<div style="display:flex;align-items:flex-start"><select class="status-select" onchange="changeStatus(\''+r.ref+'\',this.value)">'+opts+'</select></div>';
   h+='</div>';
-  h+='<div class="dh-actions"><button class="dh-btn">'+ic('mail',15)+'Send Email</button><button class="dh-btn">'+ic('phone',15)+'Call</button><button class="dh-btn">'+ic('sms',15)+'SMS</button></div>';
   /* Parcel tracking */
   if(BENEFICIARY_STATUSES.indexOf(r.status)>=0){
     h+='<div class="parcel-track">';
