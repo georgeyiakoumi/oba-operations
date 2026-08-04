@@ -1,0 +1,89 @@
+<script>
+/* ── SOP STATUSES ── */
+var STATUSES=[
+  /* Referrals > New */
+  {label:'Referral received',tone:'sp-new',pipe:'New',jrn:0},
+  /* Referrals > Reg. Appointments */
+  {label:'Referral being discussed',tone:'sp-prog',pipe:'Reg. Appointments',jrn:1},
+  {label:'Awaiting further information from applicant',tone:'sp-prog',pipe:'Reg. Appointments',jrn:1},
+  {label:'Appointment offered/booking link sent',tone:'sp-plan',pipe:'Reg. Appointments',jrn:1},
+  {label:'Pending online registration appointment',tone:'sp-plan',pipe:'Reg. Appointments',jrn:1},
+  {label:'Registration appointment attended',tone:'sp-prog',pipe:'Reg. Appointments',jrn:1},
+  {label:'Second apt offered - to complete registration',tone:'sp-prog',pipe:'Reg. Appointments',jrn:1},
+  {label:'Did not attend (DNA) registration',tone:'sp-red',pipe:'Reg. Appointments',jrn:1},
+  {label:'1st contact attempt - waiting response',tone:'sp-prog',pipe:'Reg. Appointments',jrn:1},
+  {label:'2nd contact attempt - waiting response',tone:'sp-prog',pipe:'Reg. Appointments',jrn:1},
+  {label:'Appointment Rescheduled',tone:'sp-plan',pipe:'Reg. Appointments',jrn:1},
+  /* Referrals > Waiting List */
+  {label:'Added to waiting list',tone:'sp-plan',pipe:'Waiting List',jrn:0},
+  /* Beneficiaries > Active */
+  {label:'Registration Complete - No follow up required',tone:'sp-done',pipe:'Active',jrn:3},
+  {label:'Registration Complete - WB follow up required [complex]',tone:'sp-done',pipe:'Active',jrn:3},
+  {label:'Active Beneficiary',tone:'sp-done',pipe:'Active',jrn:3},
+  {label:'Ongoing Support',tone:'sp-done',pipe:'Active',jrn:3},
+  /* Beneficiaries > Waiting for Delivery */
+  {label:'On waiting list for delivery',tone:'sp-plan',pipe:'Waiting for Delivery',jrn:3},
+  /* Closed */
+  {label:'Referral Rejected',tone:'sp-grey',pipe:'Closed',jrn:4},
+  {label:'Close file due to non-engagement',tone:'sp-grey',pipe:'Closed',jrn:4}
+];
+function statusMeta(s){for(var i=0;i<STATUSES.length;i++)if(STATUSES[i].label===s)return STATUSES[i];return{label:s,tone:'sp-grey',pipe:'Closed',jrn:4};}
+
+/* ── Status groupings (matching health-bank constants.ts) ── */
+var NEW_STATUSES=['Referral received'];
+
+var REG_APPOINTMENT_STATUSES=[
+  'Referral being discussed',
+  'Awaiting further information from applicant',
+  'Appointment offered/booking link sent',
+  'Pending online registration appointment',
+  'Registration appointment attended',
+  'Second apt offered - to complete registration',
+  'Did not attend (DNA) registration',
+  '1st contact attempt - waiting response',
+  '2nd contact attempt - waiting response',
+  'Appointment Rescheduled'
+];
+
+var WAITING_LIST_STATUSES=['Added to waiting list'];
+
+var REFERRAL_STATUSES=NEW_STATUSES.concat(REG_APPOINTMENT_STATUSES).concat(WAITING_LIST_STATUSES);
+
+var APPT_PENDING=['Appointment offered/booking link sent','Pending online registration appointment','Appointment Rescheduled','Second apt offered - to complete registration'];
+
+var ACTIVE_STATUSES=[
+  'Registration Complete - No follow up required',
+  'Registration Complete - WB follow up required [complex]',
+  'Active Beneficiary',
+  'Ongoing Support'
+];
+
+var DELIVERY_WAIT_STATUSES=['On waiting list for delivery'];
+
+var BENEFICIARY_STATUSES=ACTIVE_STATUSES.concat(DELIVERY_WAIT_STATUSES);
+
+/* Back-compat alias — views still reference COMPLETE_STATUSES */
+var COMPLETE_STATUSES=ACTIVE_STATUSES;
+
+var CLOSED_STATUSES=['Referral Rejected','Close file due to non-engagement'];
+var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var DIETARY=['No dietary requirements','Vegetarian','Vegan','Pescatarian','Halal','Gluten-free','Dairy-free'];
+var ALLERGENS=['No allergies','Nuts','Tree nuts','Peanuts','Gluten','Dairy','Eggs','Soy','Fish','Shellfish','Sesame','Celery','Mustard','Sulphites'];
+var ADD_ITEMS=[['sanitary','Sanitary products needed'],['incontinence','Incontinence products needed'],['baby','Baby food / items needed'],['nappies','Baby nappies needed'],['pet','Pet food needed'],['bedding','Bedding and blankets needed']];
+var EXISTING=[['orgs','Receiving support from other organisations'],['school','Support through school'],['partner','Support through partner organisations'],['socialworker','Social worker involved']];
+var END_CHECKS=[['protocol','Explained 3 months support protocol & text system'],['welcome','Provided Welcome Letter'],['consent','Legal consent signed to speak on their behalf (optional — if required)']];
+var FLAG_CHECKS=[['complex','Complex case'],['disability','Disability / LTC'],['interpreter','Interpreter needed'],['dv','Domestic violence (household)'],['da','Drug & alcohol (household)']];
+var NOTE_CATS=['General','Debt','Mental Health','Medical','Benefits','Safeguarding','Housing'];
+var RISK_AREAS=[
+  {id:'debt',icon:'card',title:'Debt & Finances',partners:['Internal Debt Review','SHINE','StepChange','Other']},
+  {id:'mh',icon:'brain',title:'Mental Health & Wellbeing',callout:{tone:'red',text:'Safety protocol: if a person arrives visibly intoxicated, do not proceed. Safely ask them to leave and refer immediately to the Ace of Clubs.'},partners:['Internal Wellbeing Check-in','Ace of Clubs','Mind','Samaritans','Talking Therapies','Other']},
+  {id:'ben',icon:'ext',title:'Benefits & Grants',partners:['Internal Benefits Review','Income Max CIC','Citizens Advice','Turn2Us','Entitledto','Other']},
+  {id:'dv',icon:'shield',title:'DV & Safeguarding',callout:{tone:'amber',text:'Data privacy rule: never record identifying details or names of perpetrators in this field. Escalate to senior staff immediately if risk is acute.'},partners:['Internal Escalation to Senior Staff','Refuge','National DV Helpline','Local IDVA Service','Social Services','MARAC Referral','Other']},
+  {id:'housing',icon:'home',title:'Housing',partners:[]}
+];
+var WB_PASSWORD='OBA2026'; // DEV[4]: replace with proper role-based auth before going live — this plain-text gate is prototype only
+
+/* ── DEMO DATA ── */
+function relToday(){return new Date().toISOString().slice(0,10);}
+function relMon(off){var d=new Date();d.setDate(d.getDate()+((8-d.getDay())%7||7)+off*7);return d.toISOString().slice(0,10);}
+function relDate(days){var d=new Date();d.setDate(d.getDate()+days);return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}</script>

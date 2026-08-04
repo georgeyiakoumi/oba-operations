@@ -1,0 +1,660 @@
+<script>
+/* ══════════════════════════════════════════════════════
+   DETAIL PAGE  (stepper + triage + registration interview)
+══════════════════════════════════════════════════════ */
+var DETAIL_STEPS=['Referral Information','Triage & Validation','Registration Interview','Registration Finalising','Follow-up'];
+function renderDetail(){
+  var r=getRef(STATE.ref);if(!r)return renderAllReferrals();
+  var flags=flagList(r);
+  var opts=STATUSES.map(function(s){return'<option '+(s.label===r.status?'selected':'')+'>'+esc(s.label)+'</option>';}).join('');
+  var h=renderBreadcrumb([['Referrals','allReferrals']],r.ref+' — '+r.name);
+  /* header */
+  h+='<div class="card detail-head"><div class="head-row"><div>';
+  h+='<div class="dh-eyebrow">'+esc(r.ref)+'</div>';
+  h+='<div class="dh-name">'+esc(r.name)+'</div>';
+  h+='<div class="dh-meta">'+detailTagline(r)+'</div>';
+  /* flags — active ones as badges, + Add tags dropdown at the end */
+  h+='<div class="dh-flags" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px">';
+  /* render active flag badges */
+  FLAG_CHECKS.forEach(function(c){
+    var on=flagList(r).indexOf(c[0])>=0;
+    if(!on)return;
+    if(c[0]==='dv'){
+      h+='<span class="flag-dot flag-dot-dv" data-tip="DV / DA — domestic violence" title="DV / DA" style="cursor:pointer" onclick="toggleFlag(\''+r.ref+'\',\'dv\',false)"></span>';
+    } else if(c[0]==='da'){
+      h+='<span class="flag-dot flag-dot-da" data-tip="D&amp;A — drug &amp; alcohol" title="D&amp;A" style="cursor:pointer" onclick="toggleFlag(\''+r.ref+'\',\'da\',false)"></span>';
+    } else {
+      var tagCls={'complex':'flag-complex','disability':'flag-dis','interpreter':'flag-int'}[c[0]]||'';
+      var tagLabel={'complex':'Complex','disability':'DIS','interpreter':'INT'}[c[0]]||c[1];
+      h+='<span class="flag-tag '+tagCls+'" style="cursor:pointer;display:inline-flex;align-items:center;gap:5px" onclick="toggleFlag(\''+r.ref+'\',\''+c[0]+'\',false)" title="Click to remove">'+tagLabel+' <span style="opacity:.5;font-size:10px">✕</span></span>';
+    }
+  });
+  /* add tags button + dropdown */
+  h+='<div class="flag-add-wrap" style="position:relative;display:inline-block">';
+  h+='<button class="flag-add-btn" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'block\'?\'none\':\'block\'" style="display:inline-flex;align-items:center;gap:5px;background:#f5f4ec;border:1px dashed var(--line);border-radius:20px;padding:4px 11px;font-size:12.5px;color:var(--muted);cursor:pointer;font-weight:500">'+ic('plus',12)+' Add tag</button>';
+  h+='<div class="flag-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:8px;z-index:30;min-width:200px">';
+  FLAG_CHECKS.forEach(function(c){
+    var on=flagList(r).indexOf(c[0])>=0;
+    var preview='';
+    if(c[0]==='dv')preview='<span class="flag-dot flag-dot-dv" style="flex-shrink:0"></span>';
+    else if(c[0]==='da')preview='<span class="flag-dot flag-dot-da" style="flex-shrink:0"></span>';
+    h+='<label style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;cursor:pointer;font-size:13.5px;'+(on?'background:var(--plum-bg)':'')+'" onmouseover="this.style.background=\'#f5f4ec\'" onmouseout="this.style.background=\''+(on?'var(--plum-bg)':'')+'\'">'+
+      '<input type="checkbox" '+(on?'checked':'')+' style="width:15px;height:15px;accent-color:var(--plum);flex-shrink:0" onchange="toggleFlag(\''+r.ref+'\',\''+c[0]+'\',this.checked)">'+
+      preview+c[1]+'</label>';
+  });
+  h+='</div></div>';
+  h+='</div>';
+  h+='</div>';
+  /* status select in top right */
+  h+='<div style="display:flex;align-items:flex-start"><select class="status-select" onchange="changeStatus(\''+r.ref+'\',this.value)">'+opts+'</select></div>';
+  h+='</div>';
+  h+='<div class="dh-actions"><button class="dh-btn">'+ic('mail',15)+'Send Email</button><button class="dh-btn">'+ic('phone',15)+'Call</button><button class="dh-btn">'+ic('sms',15)+'SMS</button></div>';
+  /* Parcel tracking */
+  if(BENEFICIARY_STATUSES.indexOf(r.status)>=0){
+    h+='<div class="parcel-track">';
+    var parcelCount=3;
+    for(var pi=1;pi<=parcelCount;pi++){
+      var pStatus='pending';
+      if(r.openFrom){
+        var mStart=r.openFrom.match(/^([A-Za-z]{3})/);
+        if(mStart){
+          var startIdx=MONTHS.indexOf(mStart[1]);
+          var nowIdx=new Date().getMonth();
+          var monthsIn=nowIdx>=startIdx?nowIdx-startIdx:12-startIdx+nowIdx;
+          if(pi<=monthsIn)pStatus='collected';
+          else if(pi===monthsIn+1)pStatus='booked';
+          else pStatus='scheduled';
+        }
+      }
+      var statusLabel={collected:'Collected',booked:'Booked',scheduled:'Scheduled',pending:'Pending'}[pStatus];
+      h+='<div class="parcel-chip">'+ic('parcel',14)+' Parcel '+pi+' <span class="pc-status pc-'+pStatus+'">'+statusLabel+'</span></div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>'; /* close header card */
+  /* progress bar */
+  h+='<div class="step-progress">';
+  DETAIL_STEPS.forEach(function(lbl,i){
+    var n=i+1;
+    var isDone=n<STATE.step;
+    var isActive=n===STATE.step;
+    var cls=isDone?'done':isActive?'active':'';
+    h+='<div class="sp-step '+cls+'">';
+    h+='<div class="sp-dot '+cls+'">'+(isDone?ic('check',12):n)+'</div>';
+    h+='<span class="sp-label">'+lbl+'</span>';
+    h+='</div>';
+    if(i<DETAIL_STEPS.length-1)h+='<div class="sp-line'+(isDone?' done':'')+'"></div>';
+  });
+  h+='</div>';
+  /* tabs + content in one card */
+  h+='<div class="card" style="padding:0;overflow:hidden">';
+  h+='<div class="detail-tabs">';
+  DETAIL_STEPS.forEach(function(lbl,i){
+    var n=i+1;
+    var isActive=STATE.step===n;
+    var isDone=n<STATE.step;
+    var isLocked=(n>=4)&&(STATE.step<4);
+    var cls='detail-tab'+(isActive?' active':'')+(isDone?' done':'')+(isLocked?' locked':'');
+    var clickFn=isLocked?'void(0)':(n===4)?'setStepGuarded('+n+',\''+STATE.ref+'\')':'setStep('+n+')';
+    h+='<button class="'+cls+'" onclick="'+clickFn+'"'+(isLocked?' title="Complete the Registration Interview first" tabindex="-1"':'')+'>'+
+      (isDone?'<span class="dt-check">'+ic('check',11)+'</span>':'<span class="dt-num">'+n+'</span>')+
+      lbl+(isLocked?' <span style="font-size:10px;opacity:.5">'+ic('lock',10)+'</span>':'')+
+      '</button>';
+  });
+  h+='</div>';
+  h+='<div class="detail-tab-content">';
+  if(STATE.step===1)h+=renderStepReferralInfo(r);
+  else if(STATE.step===2)h+=renderStep1(r);
+  else if(STATE.step===3)h+=renderRegInterview(r);
+  else if(STATE.step===4)h+=renderRegFinalising(r);
+  else h+='<div class="placeholder" style="padding:40px;text-align:center"><div style="margin-bottom:12px">'+ic('note',30)+'</div><b>Follow-up</b><p style="margin-top:8px;color:var(--muted)">Notes, timeline and follow-up appointments.</p></div>';
+  h+='</div></div>';
+  return h;
+}
+function setStep(n){STATE.step=n;render();} /* no scrollTo — stay in place */
+/* close flag dropdown when clicking outside */
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.flag-add-wrap')){
+    var dd=document.querySelector('.flag-dropdown');
+    if(dd)dd.style.display='none';
+  }
+});
+function setStepGuarded(n,ref){
+  /* Warn if jumping to Registration Finalising (step 4) without visiting all 3 interview tabs */
+  if(n===4){
+    var visited=(STATE.tabsVisited&&STATE.tabsVisited[ref])||{};
+    var allDone=visited['1']&&visited['2']&&visited['3'];
+    if(!allDone){
+      var missing=[];
+      if(!visited['1'])missing.push('Household');
+      if(!visited['2'])missing.push('Dietary & Needs');
+      if(!visited['3'])missing.push('Wellbeing Screening');
+      var msg='Registration interview not complete \u2014 you have not been through: '+missing.join(', ')+'.\n\nAre you sure you want to move to Registration Finalising?';
+      if(!window.confirm(msg))return;
+    }
+  }
+  setStep(n);
+}
+function changeStatus(ref,status){var r=getRef(ref);r.status=status;if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Status saved');}).setStatus(ref,status);else toast('Status updated (demo)');render();}
+
+/* Step 0 — Referral Information + Household Lookup */
+function renderStepReferralInfo(r){
+  /* household lookup across all refs (dev: replace with DB query) */
+  var matches=(DATA.referrals||[]).filter(function(x){
+    if(x.ref===r.ref)return false;
+    var rSurname=(r.name||'').split(' ').pop().toLowerCase();
+    var xSurname=(x.name||'').split(' ').pop().toLowerCase();
+    return rSurname.length>2 && rSurname===xSurname;
+  });
+  /* historical referrals for this household */
+  var hist=(DATA.historicalReferrals||[]).filter(function(h){
+    var rSurname=(r.name||'').split(' ').pop().toLowerCase();
+    return (h.household||'').toLowerCase().indexOf(rSurname)>=0;
+  });
+  var prevRefs=matches.concat(hist);
+  var h='';
+  /* DataList card grid */
+  function dlCard(title,rows){
+    var c='<div class="datalist-card"><div class="dl-title">'+title+'</div>';
+    rows.forEach(function(row){c+='<div class="dl-row"><span class="dl-label">'+row[0]+'</span><span class="dl-value">'+esc(row[1]||'—')+'</span></div>';});
+    return c+'</div>';
+  }
+  h+='<div class="datalist-grid">';
+  h+=dlCard('Contact',[['Phone',r.phone],['Email',r.email],['Borough',r.borough]]);
+  h+=dlCard('Household',[['Adults',r.adults],['Children',formatChildren(r.children,r.ages)],['Household size',(parseInt(r.adults)||0)+(parseInt(r.children)||0)+'']]);
+
+  h+=dlCard('Referral',[['Type',r.type],['Received',fmtDate(r.receivedDate)],['Status',r.status],['Support',monthsOpen(r)]]);
+  h+=dlCard('Distribution',[['Group',r.distributionGroup||'—'],['Type',r.distributionType||'—'],['WB Officer',r.wbOfficer||'—']]);
+  h+='</div>';
+  /* Circumstances */
+  h+='<div class="card" style="padding:18px 22px;margin-bottom:18px">';
+  h+='<div class="mini-label">Reason for referral / circumstances</div>';
+  h+='<div style="font-size:14.5px;line-height:1.55;margin-top:6px">'+esc(r.circumstances||'Not provided')+'</div>';
+  h+='</div>';
+  /* household lookup */
+  h+='<div class="divider"></div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+ic('search',18)+'<div style="font-weight:600;font-size:15.5px">Household Lookup</div>';
+  h+='<span style="font-family:\'IBM Plex Mono\';font-size:10.5px;background:var(--orange-bg);color:var(--orange);padding:2px 8px;border-radius:5px">DEV[5]: wire to DB search</span></div>';
+  if(prevRefs.length===0){
+    h+='<div class="callout green">'+ic('check',15)+'<span><b>No previous records found</b> for this surname. This appears to be a first-time referral.</span></div>';
+  } else {
+    h+='<div class="callout amber">'+ic('warn',15)+'<span><b>'+prevRefs.length+' possible match'+(prevRefs.length>1?'es':'')+' found.</b> Review below and check for discrepancies.</span></div>';
+    h+='<div class="wsec-title" style="font-size:15px;margin:16px 0 10px">Previous records — compare with current referral</div>';
+    prevRefs.forEach(function(x){
+      var isHist=!!x.household;
+      h+='<div style="border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;overflow:hidden">';
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f9f8f2;border-bottom:1px solid var(--line)">';
+      h+=ic('ref',15)+'<span style="font-family:\'IBM Plex Mono\';font-size:13px;color:var(--green-bright);font-weight:500">'+esc(x.ref||'Historical')+'</span>';
+      h+='<span style="color:var(--muted);font-size:13px">'+esc(isHist?x.household:x.name)+' · '+(isHist?x.openFrom+' – '+x.openTo:x.receivedDate)+'</span>';
+      if(isHist)h+='<span style="font-family:\'IBM Plex Mono\';font-size:10px;background:var(--grey-bg);color:var(--grey-tx);padding:2px 7px;border-radius:5px">Previous</span>';
+      h+='</div>';
+      h+='<div class="compare-grid">';
+      h+='<div class="compare-col-head">Current referral</div><div class="compare-col-head right">Household record (editable)</div>';
+      var cfields=[
+        ['Adults',r.adults,x.adults],
+        ['Children',r.children,x.children||'—'],
+        ['Phone',r.phone,x.phone],
+        ['Email',r.email,x.email],
+        ['Borough',r.borough,x.borough],
+      ];
+      cfields.forEach(function(cf){
+        var diff=(cf[1]||'').trim()!==(cf[2]||'').trim()&&(cf[2]||'—')!=='—';
+        h+='<div class="compare-cell'+(diff?' diff':'')+'"><label>'+cf[0]+'</label>'+esc(cf[1]||'—')+'</div>';
+        h+='<div class="compare-cell right'+(diff?' diff':'')+'"><label>'+cf[0]+(diff?' <span style="color:var(--orange)">⚠ differs</span>':'')+'</label>';
+        h+='<input value="'+esc(cf[2]||'')+'"> ';
+        if(diff)h+='<button class="copy-btn" onclick="this.parentElement.querySelector(\'input\').value=\''+esc(cf[1])+'\'">'+ic('arrow',11)+'Use current</button>';
+        h+='</div>';
+      });
+      h+='</div></div>';
+    });
+  }
+  h+='<div style="margin-top:18px"><button class="btn btn-green" onclick="setStep(2)">'+ic('arrow',15)+'Continue to Triage & Validation</button></div>';
+  h+='</div>';
+  return h;
+}
+/* Step 1 (now step 2) — Triage & Validation */
+function renderStep1(r){
+  var h='<div class="card onb-row"><div style="display:flex;align-items:center;gap:10px;font-weight:600;color:var(--green-deep)">'+ic('doc',16)+'Onboarding Form Data</div><div style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13.5px">'+esc(r.email)+' · '+esc(r.borough)+' · HH: '+hh(r)+' '+ic('arrow',15)+'</div></div>';
+  h+='<div class="card triage-card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">'+ic('shield',18)+'<h2 style="margin:0">Triage & Validation</h2></div>';
+  var s1=r.triagePrev;
+  h+='<div class="tstep'+(s1==='accept'?' accepted':'')+'"><div class="tstep-top"><div style="display:flex;gap:12px"><div class="tstep-num">'+(s1==='accept'?ic('check',13):'1')+'</div><div><div class="tstep-title">Previous Support in Last 6 Months?</div><div class="tstep-sub">Database lookup: <span class="ok">✓ No records found</span></div></div></div>';
+  if(s1==='accept')h+='<button class="change-link" onclick="triage(\''+r.ref+'\',\'triagePrev\',\'\')">Change</button>';
+  else h+='<div class="tbtns"><button class="btn btn-accept" onclick="triage(\''+r.ref+'\',\'triagePrev\',\'accept\')">'+ic('check',14)+'Accept</button><button class="btn btn-reject" onclick="rejectRef(\''+r.ref+'\')">'+ic('x',14)+'Reject</button></div>';
+  h+='</div></div>';
+  var s2=r.triageBorough,locked1=(s1!=='accept'),inCatch=true;
+  var wl={};(DATA.referrals||[]).forEach(function(x){if(x.status==='Added to waiting list')(wl[x.borough]=wl[x.borough]||[]).push(x);});
+  var bc=DATA.boroughCounts||{};
+  h+='<div class="tstep'+(s2==='accept'?' accepted':'')+(locked1?' locked':'')+'"><div class="tstep-top"><div style="display:flex;gap:12px"><div class="tstep-num">'+(s2==='accept'?ic('check',13):'2')+'</div><div><div class="tstep-title">Borough: '+esc(r.borough)+'</div><div class="tstep-sub">Catchment check: <span class="ok">✓ In catchment area</span></div></div></div>';
+  if(!locked1&&s2!=='accept')h+='<div class="tbtns"><button class="btn btn-accept" onclick="triage(\''+r.ref+'\',\'triageBorough\',\'accept\')">'+ic('check',14)+'Accept</button><button class="btn btn-wait" onclick="waitlist(\''+r.ref+'\')">'+ic('clock',14)+'Waitlist</button><button class="btn btn-reject" onclick="rejectRef(\''+r.ref+'\')">'+ic('x',14)+'Reject</button></div>';
+  else if(s2==='accept')h+='<button class="change-link" onclick="triage(\''+r.ref+'\',\'triageBorough\',\'\')">Change</button>';
+  var total=0;['Lambeth','Southwark','Wandsworth','Croydon'].forEach(function(b){total+=(bc[b]||0);});
+  h+='<div class="borough-chips">';
+  ['Lambeth','Southwark','Wandsworth','Croydon'].forEach(function(b){
+    var cnt=(bc[b]||0),pct=total?Math.round(cnt/total*100):0;
+    h+='<div class="bchip'+(b===r.borough?' hi':'')+'" style="min-width:100px">';
+    h+='<span style="font-weight:700;font-size:15px">'+pct+'%</span>';
+    h+='<span style="font-size:11.5px;color:var(--muted)">'+esc(b)+' ('+cnt+')</span>';
+    if(wl[b]&&wl[b].length)h+='<span class="bc-wl">waiting list: '+wl[b].length+'</span>';
+    h+='</div>';
+  });
+  h+='<div class="bchip" style="background:#f1efe6;font-weight:600;align-items:center">'+total+' total</div></div>';
+  h+='</div></div>';
+  var locked2=(s2!=='accept');
+  h+='<div class="tstep'+(locked2?' locked':'')+'"><div style="display:flex;gap:12px"><div class="tstep-num">3</div><div style="flex:1"><div class="tstep-title">Book Appointment & Send Invite</div>';
+  if(!locked2){
+    var online=(r.apptType==='online');
+    h+='<div class="appt-label">Appointment Type</div><div class="appt-type"><button class="at-btn'+(!online?' on':'')+'" onclick="triage(\''+r.ref+'\',\'apptType\',\'in-person\')">'+ic('cal',16)+'In-Person <span style="font-size:11px;color:var(--faint)">(default)</span></button><button class="at-btn'+(online?' on':'')+'" onclick="triage(\''+r.ref+'\',\'apptType\',\'online\')">'+ic('video',16)+'Online</button></div>';
+    // Preferred volunteer
+    var prefVol=r.apptSlot||'Anyone';
+    h+='<div class="appt-label" style="margin-top:12px">Preferred volunteer</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+    ['Anyone','Sophie','Sonya','Despina','Olivia'].forEach(function(v){h+='<button class="schip'+(prefVol===v?' on':'')+'" style="font-size:13px" onclick="triage(\''+r.ref+'\',\'apptSlot\',\''+v+'\')">'+v+'</button>';});
+    h+='</div>';
+    if(!online){
+      h+='<div class="invite-note">"Send invite" emails and texts the applicant a booking link for a Monday in-person slot.</div>';
+      h+='<button class="btn btn-green" onclick="sendInviteUI(\''+r.ref+'\')">'+ic('send',15)+'Send invite</button>';
+    } else {
+      h+='<div class="invite-note">For online appointments: first email the applicant to let them know someone will be in touch, then add them to the online registration list.</div>';
+      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">';
+      h+='<button class="btn btn-ghost" onclick="sendUpdateEmailUI(\''+r.ref+'\')">'+ic('mail',15)+'Send update / response email</button>';
+      h+='<button class="btn btn-green" onclick="sendForOnlineRegUI(\''+r.ref+'\')">'+ic('video',15)+'Send for online registration</button>';
+      h+='</div>';
+    }
+  }
+  h+='</div></div></div></div>';
+  return h;
+}
+function triage(ref,field,value){var r=getRef(ref);r[field]=value;if(hasGAS)google.script.run.withFailureHandler(function(e){toast('Error: '+e.message);}).saveTriageField(ref,field,value);render();}
+function waitlist(ref){var r=getRef(ref);r.status='Added to waiting list';if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Moved to waiting list');}).addToWaitlist(ref);else toast('Moved to waiting list (demo)');render();}
+function rejectRef(ref){var r=getRef(ref);r.status='Referral Rejected';if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Referral rejected');}).setStatus(ref,'Referral Rejected');else toast('Referral rejected (demo)');render();}
+function sendInviteUI(ref){var r=getRef(ref);var st=(r.apptType==='online')?'Pending online registration appointment':'Appointment offered/booking link sent';r.status=st;// DEV[1]: wire sendInvite() in Code.gs to your email + SMS booking-link gateway
+  if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Invite sent — email + text booking link');}).sendInvite(ref,r.apptType);else toast('Invite sent (demo)');render();}
+function sendUpdateEmailUI(ref){
+  var r=getRef(ref);
+  r.status='Pending online registration appointment';
+  toast('Update email sent — applicant notified someone will be in touch (demo)');
+  if(hasGAS)google.script.run.withFailureHandler(function(){}).setStatus(ref,r.status);
+  render();
+}
+function sendForOnlineRegUI(ref){
+  var r=getRef(ref);
+  r.status='Pending online registration appointment';
+  toast('Added to online registration list');
+  if(hasGAS)google.script.run.withFailureHandler(function(){}).setStatus(ref,r.status);
+  go('onlinePending');
+}
+function renderOnlinePending(){
+  var refs=(DATA.referrals||[]).filter(function(r){return r.status==='Pending online registration appointment';});
+  var h='<div class="eyebrow">Registrations</div><h1>Online Registrations Pending</h1>';
+  h+='<p style="color:var(--muted);margin-bottom:18px">Applicants who need their registration completed online. Contact each to arrange their appointment.</p>';
+  if(!refs.length)return h+'<div class="card placeholder"><div class="pic">'+ic('video',32)+'</div><b>No online registrations pending</b></div>';
+  h+='<div class="card">';
+  refs.forEach(function(r){
+    h+='<div class="appt-row" onclick="go(\'detail\',\''+r.ref+'\')">'+
+      '<div class="appt-info"><div class="appt-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+'</div>'+
+      '<div class="appt-meta">'+esc(r.ref)+' · '+esc(r.borough)+' · '+hh(r)+(r.apptSlot&&r.apptSlot!=='Anyone'?' · Preferred: '+esc(r.apptSlot):'')+'</div></div>'+
+      statusPill(r)+'<span style="color:var(--faint);margin-left:8px">'+ic('arrow')+'</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ══ Step 2: REGISTRATION INTERVIEW ══════════════════ */
+var RTABS=[[1,'users','Household'],[2,'welfare','Dietary & Needs'],[3,'brain','Wellbeing Screening']];
+function renderRegInterview(r){
+  var wf=getWelfare(r);
+  /* mark current tab as visited */
+  STATE.tabsVisited=STATE.tabsVisited||{};STATE.tabsVisited[r.ref]=STATE.tabsVisited[r.ref]||{};STATE.tabsVisited[r.ref][STATE.wtab]=true;
+  var h='<div class="card" style="padding:22px 26px"><div class="wtabs">';
+  var stepClasses=['step1','step2','step3'];
+  RTABS.forEach(function(t,i){
+    var visited=(STATE.tabsVisited&&STATE.tabsVisited[r.ref]&&STATE.tabsVisited[r.ref][t[0]]);
+    var isOn=(STATE.wtab===t[0]);
+    var isDone=visited&&!isOn;
+    var cls='wtab '+stepClasses[i]+(isOn?' on':isDone?' done':'');
+    var checkMark=isDone?'<span class="wtab-check">'+ic('check',10)+'</span>':'';
+    h+='<button class="'+cls+'" onclick="setWtab('+t[0]+')">'+ic(t[1],15)+t[0]+'. '+t[2]+checkMark+'</button>';
+  });
+  h+='</div>';
+  if(STATE.wtab===1)h+=tabHousehold(r,wf);
+  else if(STATE.wtab===2)h+=tabDietaryAndExisting(r,wf);
+  else h+=tabWellbeingScreening(r,wf);
+  h+='</div>';
+  return h;
+}
+function setWtab(n){STATE.wtab=n;STATE.tabsVisited=STATE.tabsVisited||{};STATE.tabsVisited[STATE.ref]=STATE.tabsVisited[STATE.ref]||{};STATE.tabsVisited[STATE.ref][n]=true;render();}
+var DOC_CHECKS=[['id','Proof of ID checked for all household members'],['address','Proof of address checked for primary applicant'],['uc','Universal Credit journal reviewed (if applicable)'],['asylum','Asylum documents inspected (asylum seekers only)'],['student','University/college letter for older dependents (if applicable)']];
+function tabHousehold(r,wf){
+  wf.hh=wf.hh||{};
+  wf.hh.adults=wf.hh.adults||[];
+  wf.hh.children=wf.hh.children||[];
+  // Auto-flag disability if any household member has it
+  var anyDis=(wf.hh.adults.some(function(a){return a.dis==='Y';}))||(wf.hh.children.some(function(c){return c.dis==='Y';}));
+  if(anyDis&&flagList(r).indexOf('disability')<0){r.flags=(r.flags?r.flags+',':'')+'disability';}
+  var adultErr=wf.hh.adults.length<1;
+  var h='<div class="wsec-title">Household & Document Verification</div>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin:-6px 0 14px">Add each adult and child individually. Use the delete button to remove a row — you will be asked to confirm.</p>';
+  // ── Adults ──
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  h+='<label class="field-label" style="margin:0">Adults ('+wf.hh.adults.length+') <span style="font-weight:400;font-size:12px;color:var(--muted)">— referral stated '+esc(r.adults)+'</span></label>';
+  h+='<button class="btn btn-ghost" style="font-size:13px;padding:7px 13px" onclick="hhAddAdult(\''+r.ref+'\')">'+ic('plus',13)+'Add adult</button></div>';
+  if(wf.hh.adults.length){
+    h+='<table class="child-table" style="margin-bottom:14px"><thead><tr><th>#</th><th>Gender</th><th>Disability / LTC</th><th></th></tr></thead><tbody>';
+    wf.hh.adults.forEach(function(a,i){
+      h+='<tr><td style="color:var(--muted);font-weight:600">Adult '+(i+1)+'</td>';
+      h+='<td><select onchange="hhSetAdult(\''+r.ref+'\','+i+',\'gender\',this.value)"><option value="">—</option><option '+(a.gender==='M'?'selected':'')+' value="M">Male</option><option '+(a.gender==='F'?'selected':'')+' value="F">Female</option><option '+(a.gender==='X'?'selected':'')+' value="X">Non-binary</option></select></td>';
+      h+='<td><select onchange="hhSetAdult(\''+r.ref+'\','+i+',\'dis\',this.value)"><option value="N" '+((!a.dis||a.dis==='N')?'selected':'')+'>N</option><option value="Y" '+(a.dis==='Y'?'selected':'')+'>Y</option></select></td>';
+      h+='<td><button class="btn btn-ghost" style="padding:5px 9px;color:var(--red);border-color:var(--red);font-size:12px" onclick="hhDeleteConfirm(\''+r.ref+'\',\'adult\','+i+')">✕</button></td></tr>';
+    });
+    h+='</tbody></table>';
+  } else if(adultErr){
+    h+='<div class="field-error" style="margin-bottom:10px">'+ic('warn',13)+' At least one adult is required.</div>';
+  }
+  // ── Children ──
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  h+='<label class="field-label" style="margin:0">Children ('+wf.hh.children.length+') <span style="font-weight:400;font-size:12px;color:var(--muted)">— referral stated '+esc(r.children)+'</span></label>';
+  h+='<button class="btn btn-ghost" style="font-size:13px;padding:7px 13px" onclick="hhAddChild(\''+r.ref+'\')">'+ic('plus',13)+'Add child</button></div>';
+  if(wf.hh.children.length){
+    h+='<table class="child-table" style="margin-bottom:14px"><thead><tr><th>#</th><th>Age</th><th>Gender</th><th>Disability / LTC</th><th></th></tr></thead><tbody>';
+    wf.hh.children.forEach(function(c,i){
+      h+='<tr><td style="color:var(--muted);font-weight:600">Child '+(i+1)+'</td>';
+      h+='<td><input value="'+esc(c.age||'')+'" placeholder="e.g. 4" style="width:70px" onchange="hhSetChild(\''+r.ref+'\','+i+',\'age\',this.value)"></td>';
+      h+='<td><select onchange="hhSetChild(\''+r.ref+'\','+i+',\'gender\',this.value)"><option value="">—</option><option '+(c.gender==='M'?'selected':'')+' value="M">M</option><option '+(c.gender==='F'?'selected':'')+' value="F">F</option><option '+(c.gender==='X'?'selected':'')+' value="X">Non-binary</option></select></td>';
+      h+='<td><select onchange="hhSetChild(\''+r.ref+'\','+i+',\'dis\',this.value)"><option value="N" '+((!c.dis||c.dis==='N')?'selected':'')+'>N</option><option value="Y" '+(c.dis==='Y'?'selected':'')+'>Y</option></select></td>';
+      h+='<td><button class="btn btn-ghost" style="padding:5px 9px;color:var(--red);border-color:var(--red);font-size:12px" onclick="hhDeleteConfirm(\''+r.ref+'\',\'child\','+i+')">✕</button></td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  if(anyDis)h+='<div class="callout green" style="margin-bottom:14px">'+ic('check',14)+'<span>Disability flag set automatically — at least one household member has Disability/LTC marked as Y.</span></div>';
+  // ── Document audit ──
+  h+='<label class="field-label">Mandatory document audit</label><div class="check-list">';
+  DOC_CHECKS.forEach(function(d){var on=wf.docs&&wf.docs[d[0]];h+='<label class="check-row"><input type="checkbox" '+(on?'checked':'')+' onchange="wfToggle(\''+r.ref+'\',\'docs\',\''+d[0]+'\')">'+d[1]+'</label>';});
+  h+='</div>';
+  var docsMissing=!(wf.docs&&wf.docs.id&&wf.docs.address);
+  if(docsMissing)h+='<div class="callout amber">'+ic('warn',15)+'<span><b>Missing documents:</b> a parcel cannot be issued without proof of ID and address.</span></div>';
+  var canProceed=!adultErr;
+  if(!canProceed)h+='<div class="callout red" style="margin-top:14px">'+ic('warn',15)+'<span><b>Cannot proceed:</b> add at least one adult before continuing.</span></div>';
+  h+='<div class="divider"></div><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">';
+  h+='<button class="btn btn-ghost" onclick="offerNewAppt(\''+r.ref+'\')">'+ic('cal',15)+'Offer new appointment</button>';
+  if(canProceed)h+='<button class="btn btn-green" onclick="setWtab(2)">'+ic('arrow',15)+'Continue to Dietary & Other Needs</button>';
+  h+='</div>';
+  return h;
+}
+function hhAddAdult(ref){var wf=getWelfare(getRef(ref));wf.hh=wf.hh||{};wf.hh.adults=wf.hh.adults||[];wf.hh.adults.push({gender:'',dis:'N'});render();}
+function hhAddChild(ref){var wf=getWelfare(getRef(ref));wf.hh=wf.hh||{};wf.hh.children=wf.hh.children||[];wf.hh.children.push({age:'',gender:'',dis:'N'});render();}
+function hhSetAdult(ref,idx,field,val){var wf=getWelfare(getRef(ref));wf.hh.adults[idx][field]=val;render();}
+function hhSetChild(ref,idx,field,val){var wf=getWelfare(getRef(ref));wf.hh.children[idx][field]=val;render();}
+function hhDeleteConfirm(ref,type,idx){
+  if(!window.confirm('Delete this '+(type==='adult'?'adult':'child')+' row? Any data entered for them will be lost.')){return;}
+  var wf=getWelfare(getRef(ref));
+  if(type==='adult')wf.hh.adults.splice(idx,1);
+  else wf.hh.children.splice(idx,1);
+  render();
+}
+// DEV[7] + DEV[9]: wire to booking-link system (same as DEV[1]) — currently shows toast only
+function offerNewAppt(ref){toast('New appointment booking link sent (demo)');getRef(ref).status='Appointment Rescheduled';render();}
+function tabDietaryAndExisting(r,wf){
+  wf.diet=wf.diet||[];wf.allergens=wf.allergens||[];wf.items=wf.items||{};wf.existing=wf.existing||{};
+  var h='<div class="wsec-title">Dietary & Other Needs</div>';
+  h+='<label class="field-label" style="margin-top:0">Dietary requirements</label><div class="select-chips">';
+  DIETARY.forEach(function(d){h+='<button class="schip'+(wf.diet.indexOf(d)>=0?' on':'')+'" onclick="wfArr(\''+r.ref+'\',\'diet\',\''+d+'\')">'+d+'</button>';});
+  h+='</div><label class="field-label">Other dietary needs</label><input class="tx-field" placeholder="Any other…" value="'+esc(wf.dietOther||'')+'" onchange="wfSet(\''+r.ref+'\',\'dietOther\',this.value)">';
+  h+='<label class="field-label">Allergies</label><div class="select-chips">';
+  ALLERGENS.forEach(function(a){h+='<button class="schip'+(wf.allergens.indexOf(a)>=0?' on':'')+'" onclick="wfArr(\''+r.ref+'\',\'allergens\',\''+a+'\')">'+a+'</button>';});
+  h+='</div><label class="field-label">Other allergies</label><input class="tx-field" placeholder="Any not listed…" value="'+esc(wf.allergyOther||'')+'" onchange="wfSet(\''+r.ref+'\',\'allergyOther\',this.value)">';
+  h+='<div class="wsec-title" style="margin:22px 0 10px;font-size:16px">Additional Items</div><div class="check-grid">';
+  ADD_ITEMS.forEach(function(it){
+    var on=wf.items[it[0]];
+    h+='<label class="check-item'+(on?' on':'')+'"><input type="checkbox" '+(on?'checked':'')+' onchange="wfToggle(\''+r.ref+'\',\'items\',\''+it[0]+'\')">'+it[1]+'</label>';
+    if(on){
+      if(it[0]==='bedding'){
+        h+='<div style="grid-column:1/-1;margin:-4px 0 8px"><input class="tx-field" style="font-size:13px" placeholder="Describe what is needed (e.g. single duvet, 2x pillowcases)…" value="'+esc(wf.beddingNote||'')+'" onchange="wfSet(\''+r.ref+'\',\'beddingNote\',this.value)"></div>';
+      }else if(it[0]==='pet'){
+        h+='<div style="grid-column:1/-1;margin:-4px 0 8px;display:flex;gap:10px;align-items:center"><span style="font-size:13px;color:var(--muted)">Animal:</span>';
+        h+='<button class="schip'+(wf.petType==='cat'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'petType\',\'cat\');render()">Cat</button>';
+        h+='<button class="schip'+(wf.petType==='dog'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'petType\',\'dog\');render()">Dog</button>';
+        h+='<button class="schip'+(wf.petType==='other'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'petType\',\'other\');render()">Other</button></div>';
+      }else if(it[0]==='nappies'){
+        h+='<div style="grid-column:1/-1;margin:-4px 0 8px;display:flex;gap:10px;align-items:center"><span style="font-size:13px;color:var(--muted)">Nappy size:</span>';
+        ['Newborn','Size 1','Size 2','Size 3','Size 4','Size 5','Size 6'].forEach(function(sz){h+='<button class="schip'+(wf.nappySize===sz?' on':'')+'" style="font-size:12px;padding:4px 10px" onclick="wfSet(\''+r.ref+'\',\'nappySize\',\''+sz+'\');render()">'+sz+'</button>';});
+        h+='</div>';
+      }else if(it[0]==='sanitary'){
+        h+='<div style="grid-column:1/-1;margin:-4px 0 8px">';
+        h+='<div style="display:flex;gap:10px;align-items:center;margin-bottom:6px"><span style="font-size:13px;color:var(--muted)">Type:</span>';
+        h+='<button class="schip'+(wf.sanitaryType==='pads'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'sanitaryType\',\'pads\');render()">Pads</button>';
+        h+='<button class="schip'+(wf.sanitaryType==='tampons'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'sanitaryType\',\'tampons\');render()">Tampons</button>';
+        h+='<button class="schip'+(wf.sanitaryType==='both'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'sanitaryType\',\'both\');render()">Both</button></div>';
+        h+='<div style="display:flex;gap:10px;align-items:center"><span style="font-size:13px;color:var(--muted)">No. of people needing:</span>';
+        h+='<input class="tx-field" type="number" min="1" style="max-width:80px;font-size:13px" placeholder="e.g. 2" value="'+esc(wf.sanitaryCount||'')+'" onchange="wfSet(\''+r.ref+'\',\'sanitaryCount\',this.value)"></div>';
+        h+='</div>';
+      }
+    }
+  });
+  h+='</div>';
+  h+='<div class="divider"></div><button class="btn btn-green" onclick="setWtab(3)">'+ic('arrow',15)+'Continue to Wellbeing Screening</button>';
+  return h;
+}
+/* Tab 3: Wellbeing Screening — all areas on one scrollable page */
+var WB_SCREEN_AREAS=[
+  {id:'debt',icon:'card',title:'Debt & Finances',q:'Is the household experiencing debt or severe financial pressure?',callout:null},
+  {id:'mh',icon:'brain',title:'Mental Health & Wellbeing',q:'Are there active indicators of mental health difficulties, substance use, or emotional crisis?',
+   callout:{tone:'red',text:'Safety protocol: if a person arrives visibly intoxicated, do not proceed. Safely ask them to leave and refer immediately to the Ace of Clubs.'}},
+  {id:'benef',icon:'ext',title:'Benefits & Grants',q:'Is the household missing any benefits or grants they may be entitled to?',callout:null},
+  {id:'dv',icon:'shield',title:'DV & Safeguarding',q:'Are there any indicators of domestic violence, abuse, or safeguarding concerns?',
+   callout:{tone:'amber',text:'Data privacy rule: never record identifying details or names of perpetrators. Escalate to senior staff immediately if risk is acute.'}}
+];
+function tabWellbeingScreening(r,wf){
+  wf.screen=wf.screen||{};wf.existing=wf.existing||{};
+  var anyFlagged=WB_SCREEN_AREAS.some(function(a){return wf.screen[a.id]&&wf.screen[a.id].flagged;});
+  var h='';
+  /* ── Summary note — top ── */
+  h+='<div class="wsec-title">Summary of issues</div>';
+  h+='<p style="color:var(--muted);font-size:13px;margin:-6px 0 8px">Summarise any concerns, referrals made, or actions agreed during this screening. Completed before or after working through the areas below.</p>';
+  h+='<textarea class="ta-field" placeholder="e.g. Beneficiary disclosed rent arrears and expressed anxiety about debt. Provided SHINE leaflet and suggested a wellbeing follow-up…" style="min-height:80px;margin-bottom:18px" onchange="wfSet(\''+r.ref+'\',\'screenNote\',this.value)">'+esc(wf.screenNote||'')+'</textarea>';
+  /* ── Existing support ── */
+  h+='<div class="wsec-title" style="font-size:15px">Existing support</div>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin:-4px 0 10px">Who else is already helping? Make sure OBA is not duplicating effort.</p>';
+  h+='<div class="check-list" style="margin-bottom:6px">';
+  EXISTING.forEach(function(e){var on=wf.existing[e[0]];h+='<label class="check-row"><input type="checkbox" '+(on?'checked':'')+' onchange="wfToggle(\''+r.ref+'\',\'existing\',\''+e[0]+'\')">'+e[1]+'</label>';});
+  h+='</div><textarea class="ta-field" placeholder="Notes on existing support…" style="min-height:50px;margin-bottom:20px" onchange="wfSet(\''+r.ref+'\',\'existingNotes\',this.value)">'+esc(wf.existingNotes||'')+'</textarea>';
+  /* ── Screening areas ── */
+  h+='<div class="wsec-title" style="font-size:15px">Wellbeing screening</div>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin:-4px 0 14px">Tick any concerns identified. A task will be created in the Wellbeing file and logged there.</p>';
+  WB_SCREEN_AREAS.forEach(function(area){
+    var s=wf.screen[area.id]||{};var flagged=s.flagged||false;
+    h+='<div style="border:1px solid '+(flagged?'#e9cddd':'var(--line)')+';border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;background:'+(flagged?'var(--plum-bg)':'var(--card)')+'">';
+    h+='<div style="display:flex;align-items:flex-start;gap:14px">';
+    h+='<span style="color:'+(flagged?'var(--plum)':'var(--faint)')+';margin-top:2px">'+ic(area.icon,20)+'</span>';
+    h+='<div style="flex:1"><div style="font-weight:600;font-size:15px;margin-bottom:3px">'+area.title+'</div>';
+    h+='<div style="color:var(--muted);font-size:13.5px;margin-bottom:8px">'+area.q+'</div>';
+    if(area.callout)h+='<div class="callout '+area.callout.tone+'" style="margin-bottom:8px">'+ic(area.callout.tone==='red'?'warn':'shield',14)+'<span>'+area.callout.text+'</span></div>';
+    h+='<label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:500;font-size:14px;'+(flagged?'color:var(--plum);margin-bottom:14px':'')+'">';
+    h+='<input type="checkbox" '+(flagged?'checked':'')+' style="width:17px;height:17px;accent-color:var(--plum)" onchange="screenToggle(\''+r.ref+'\',\''+area.id+'\',this.checked)">';
+    h+='Concern identified</label>';
+    if(flagged){
+      /* Task creation panel */
+      var tk=s.task||{};
+      if(s.taskLogged){
+        h+='<div class="callout green">'+ic('check',14)+'<b>Task logged in Wellbeing file.</b> Open the Wellbeing file to view and assign it.</div>';
+      } else {
+        h+='<div style="background:#f9f8f2;border-radius:9px;padding:14px 16px;margin-top:2px">';
+        h+='<div style="font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Create a task in Wellbeing file</div>';
+        h+='<textarea class="ta-field" placeholder="Describe the concern or action needed…" style="min-height:56px;margin-bottom:8px" onchange="screenTaskSet(\''+r.ref+'\',\''+area.id+'\',\'note\',this.value)">'+esc(tk.note||'')+'</textarea>';
+        h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px"><div style="flex:1;min-width:140px"><label style="font-size:12px;color:var(--muted)">Allocated volunteer</label><input class="tx-field" style="margin-top:4px;font-size:13px" placeholder="Name or Anyone" value="'+esc(tk.owner||'')+'" onchange="screenTaskSet(\''+r.ref+'\',\''+area.id+'\',\'owner\',this.value)"></div>';
+        h+='<div style="flex:1;min-width:140px"><label style="font-size:12px;color:var(--muted)">Due date</label><input class="tx-field" style="margin-top:4px;font-size:13px" type="text" placeholder="DD/MM/YYYY" value="'+esc(tk.due||'')+'" onchange="screenTaskSet(\''+r.ref+'\',\''+area.id+'\',\'due\',this.value)"></div></div>';
+        h+='<button class="btn btn-plum" style="font-size:13px;padding:8px 16px" onclick="screenLogTask(\''+r.ref+'\',\''+area.id+'\')">'+ic('check',14)+'Log task</button>';
+        h+='</div>';
+      }
+    }
+    h+='</div></div></div>';
+  });
+  if(anyFlagged)h+='<div class="callout plum" style="margin-top:4px">'+ic('wb',15)+'<b>Concerns flagged.</b> Tasks have been or will be created in the Wellbeing file. Open it to assign and follow up.</div>';
+  h+='<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">';
+  h+='<button class="btn btn-green" onclick="setStepGuarded(4,\''+r.ref+'\')">'+ic('arrow',15)+'Continue to Registration Finalising</button>';
+  h+='<button class="btn btn-ghost" onclick="openWbInNewTab(\''+r.ref+'\')" style="color:var(--plum);border-color:var(--plum)">'+ic('wb',15)+'Open Wellbeing file</button>';
+  h+='</div>';
+  return h;
+}
+function screenToggle(ref,areaId,checked){
+  var wf=getWelfare(getRef(ref));wf.screen=wf.screen||{};
+  wf.screen[areaId]=wf.screen[areaId]||{};
+  wf.screen[areaId].flagged=checked;
+  wf.screen[areaId].taskLogged=false; // reset so task can be re-logged
+  if(checked&&flagList(getRef(ref)).indexOf('complex')<0){var r=getRef(ref);r.flags=(r.flags?r.flags+',':'')+'complex';}
+  render();
+}
+function screenTaskSet(ref,areaId,field,val){
+  var wf=getWelfare(getRef(ref));wf.screen=wf.screen||{};wf.screen[areaId]=wf.screen[areaId]||{};
+  wf.screen[areaId].task=wf.screen[areaId].task||{};
+  wf.screen[areaId].task[field]=val;
+}
+function screenLogTask(ref,areaId){
+  var r=getRef(ref);var wf=getWelfare(r);
+  var s=wf.screen[areaId]||{};var tk=s.task||{};
+  if(!tk.note){toast('Please describe the concern before logging.');return;}
+  // Create a task in the welfare tasks (same structure as wellbeing file tasks)
+  wf.tasks=wf.tasks||{};wf.tasks[areaId]=wf.tasks[areaId]||[];
+  wf.tasks[areaId].push({note:tk.note,owner:tk.owner||'',due:tk.due||'',status:'In-Progress',created:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})});
+  wf.screen[areaId].taskLogged=true;
+  // Also flag as complex if not already
+  if(flagList(r).indexOf('complex')<0)r.flags=(r.flags?r.flags+',':'')+'complex';
+  toast('Task logged in Wellbeing file');
+  render();
+}
+
+function openWbInNewTab(ref){
+  /* Opens the wellbeing view in the same tab but unlocked — for a real app the dev would open a separate URL */
+  if(!WB_UNLOCKED)WB_UNLOCKED=true;
+  STATE.wbRef=ref;STATE.wbTab=0;go('wellbeing');
+  toast('Wellbeing file opened — developer can route this to a separate window/session if needed');
+}
+
+/* ══ Step 3: REGISTRATION FINALISING ════════════════ */
+function renderRegFinalising(r){
+  var wf=getWelfare(r);wf.assign=wf.assign||{};wf.endChecks=wf.endChecks||{};wf.flags=wf.flags||{};
+  var flags=flagList(r);
+  var h='<div class="card" style="padding:22px 26px">';
+  h+='<div class="wsec-title">Registration Sign-off</div>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin:-6px 0 14px">Confirm all items before marking registration complete.</p>';
+  h+='<div class="end-checks">';
+  END_CHECKS.forEach(function(c){var on=wf.endChecks[c[0]];h+='<label class="check-row"><input type="checkbox" '+(on?'checked':'')+' onchange="wfToggle(\''+r.ref+'\',\'endChecks\',\''+c[0]+'\')">'+c[1]+'</label>';});
+  h+='</div>';
+  h+='<div class="wsec-title" style="margin:22px 0 8px;font-size:15.5px">Case flags</div>';
+  h+='<div class="check-list">';
+  FLAG_CHECKS.forEach(function(c){
+    var on=flags.indexOf(c[0])>=0||wf.flags[c[0]];
+    var preview='';
+    if(c[0]==='dv') preview='<span class="flag-dot flag-dot-dv" data-tip="DV / DA" style="margin-right:6px"></span>';
+    else if(c[0]==='da') preview='<span class="flag-dot flag-dot-da" data-tip="D&amp;A" style="margin-right:6px"></span>';
+    h+='<label class="check-row"><input type="checkbox" '+(on?'checked':'')+' onchange="toggleFlag(\''+r.ref+'\',\''+c[0]+'\',this.checked)">'+preview+c[1]+'</label>';
+  });
+  h+='</div>';
+  h+='<div class="wsec-title" style="margin:22px 0 8px;font-size:15.5px">Assignment</div>';
+  h+='<div class="assign-grid">';
+  h+='<div><label class="field-label" style="margin-top:0">Assign to Group</label><div class="toggle-pair"><button class="tpair'+(wf.assign.group==='Group 1'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'assign.group\',\'Group 1\')">Group 1</button><button class="tpair'+(wf.assign.group==='Group 2'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'assign.group\',\'Group 2\')">Group 2</button></div></div>';
+  h+='<div><label class="field-label" style="margin-top:0">Distribution</label><div class="toggle-pair"><button class="tpair'+(wf.assign.dist==='Collection'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'assign.dist\',\'Collection\')">Collection</button><button class="tpair'+(wf.assign.dist==='Delivery'?' on':'')+'" onclick="wfSet(\''+r.ref+'\',\'assign.dist\',\'Delivery\')">Delivery</button></div></div>';
+  h+='<div><label class="field-label" style="margin-top:0">Volunteer</label><input class="tx-field" placeholder="Your name" value="'+esc(wf.volunteer||'')+'" onchange="wfSet(\''+r.ref+'\',\'volunteer\',this.value)"></div>';
+  h+='<div><label class="field-label" style="margin-top:0">Registration day</label><div style="display:flex;gap:8px;align-items:center"><input id="dt_regday" class="tx-field" type="text" placeholder="DD/MM/YYYY" value="'+esc(wf.regDay||'')+'" style="max-width:180px" onchange="wfSet(\''+r.ref+'\',\'regDay\',this.value)"><button type="button" class="btn btn-ghost" style="padding:8px 12px;font-size:13px;white-space:nowrap" onclick="(function(){var t=new Date();var d=String(t.getDate()).padStart(2,\'0\');var m=String(t.getMonth()+1).padStart(2,\'0\');var s=d+\'/\'+m+\'/\'+t.getFullYear();document.getElementById(\'dt_regday\').value=s;wfSet(\''+r.ref+'\',\'regDay\',s);})()">Today</button></div></div>';
+  h+='<div><label class="field-label" style="margin-top:0">Support end date <span style="font-family:\'IBM Plex Mono\';font-size:10.5px;color:var(--faint)">(usually 2 months from today)</span></label>';
+  h+='<p style="color:var(--muted);font-size:12px;margin:-4px 0 7px">Click "+3 months" to auto-set, or enter manually.</p>';
+  h+='<div style="display:flex;gap:8px;align-items:center"><input id="dt_enddate" class="tx-field" type="text" placeholder="DD/MM/YYYY" value="'+esc(wf.endDate||'')+'" style="max-width:180px" onchange="wfSet(\''+r.ref+'\',\'endDate\',this.value)">';
+  h+='<button type="button" class="btn btn-ghost" style="padding:8px 12px;font-size:13px;white-space:nowrap" onclick="(function(){var t=new Date();t.setMonth(t.getMonth()+3);t.setDate(0);var d=String(t.getDate()).padStart(2,\'0\');var m=String(t.getMonth()+1).padStart(2,\'0\');var s=d+\'/\'+m+\'/\'+t.getFullYear();document.getElementById(\'dt_enddate\').value=s;wfSet(\''+r.ref+'\',\'endDate\',s);})()">+2 months (end of month)</button></div>';
+  h+='</div>';
+  h+='</div>';
+  h+='<label class="field-label">Homework for applicant</label>';
+  h+='<textarea class="ta-field" placeholder="e.g. Collect utility bills and bank statements…" onchange="wfSet(\''+r.ref+'\',\'homework\',this.value)">'+esc(wf.homework||'')+'</textarea>';
+  h+='<div class="callout green" style="margin-top:14px">'+ic('sms',15)+'<span>DEV[3]: Wire an SMS gateway here to send the applicant a text of their homework when this is saved.</span></div>';
+  h+='<label class="field-label">Notes (for reschedule or other)</label>';
+  h+='<textarea class="ta-field" placeholder="Brief notes about outcome of registration session…" onchange="wfSet(\''+r.ref+'\',\'finNotes\',this.value)">'+esc(wf.finNotes||'')+'</textarea>';
+  h+='<div class="divider"></div>';
+  h+='<div class="final-btns">';
+  h+='<button class="final-btn fb-green" onclick="finalise(\''+r.ref+'\',\'no-followup\')"><div><div>Registration Complete — no follow-up needed</div><div class="fb-desc">Sends food parcel request automatically. Choose what to do next.</div></div>'+ic('check',18)+'</button>';
+  h+='<button class="final-btn fb-plum" onclick="finalise(\''+r.ref+'\',\'followup\')"><div><div>Registration Complete — follow-up required</div><div class="fb-desc">Flags as complex. Sends food parcel request automatically. Choose what to do next.</div></div>'+ic('wb',18)+'</button>';
+  h+='<button class="final-btn fb-orange" onclick="finalise(\''+r.ref+'\',\'delivery-waitlist\')"><div><div>On waiting list for delivery</div><div class="fb-desc">Household registered but waiting for a delivery volunteer. Set the 3-month end date once delivery is confirmed.</div></div>'+ic('deliv',18)+'</button>';
+  h+='<button class="final-btn fb-orange" onclick="finalise(\''+r.ref+'\',\'rebook\')" style="opacity:.85"><div><div>Registration Incomplete — rebook</div><div class="fb-desc">Moves status to "Appointment Rescheduled". Sends the applicant a new booking link.</div></div>'+ic('cal',18)+'</button>';
+  h+='</div></div>';
+  return h;
+}
+// DEV[8]: flags are updated in-browser; call setFlags() in Code.gs to persist to sheet
+function toggleFlag(ref,flag,checked){var r=getRef(ref);var fl=flagList(r);var idx=fl.indexOf(flag);if(checked&&idx<0)fl.push(flag);else if(!checked&&idx>=0)fl.splice(idx,1);r.flags=fl.join(',');if(hasGAS)google.script.run.withFailureHandler(function(){}).setFlags(ref,r.flags);render();}
+function finalise(ref,type){
+  var r=getRef(ref);
+  if(type==='rebook'){
+    r.status='Appointment Rescheduled';
+    toast('Rebooked — booking link sent (demo)');
+    if(hasGAS)google.script.run.withFailureHandler(function(){}).setStatus(ref,r.status);
+    STATE.step=2;render();return;
+  }
+  if(type==='delivery-waitlist'){
+    r.status='On waiting list for delivery';
+    toast('Added to delivery waiting list.');
+    if(hasGAS)google.script.run.withFailureHandler(function(){}).setStatus(ref,r.status);
+    render();return;
+  }
+  var isFollowup=(type==='followup');
+  if(isFollowup){
+    r.status='Registration Complete - WB follow up required [complex]';
+    if(flagList(r).indexOf('complex')<0){r.flags=(r.flags?r.flags+',':'')+'complex';}
+  } else {
+    r.status='Registration Complete - No follow up required';
+  }
+  // DEV[2]: trigger parcel prep system here (Pick Plan / parcel queue) — fires for both completion outcomes
+  if(hasGAS)google.script.run.withFailureHandler(function(){}).setStatus(ref,r.status);
+  if(!WB_UNLOCKED)WB_UNLOCKED=true;
+  showFinalisePopup(ref,isFollowup);
+}
+function showFinalisePopup(ref,hasFollowup){
+  var existing=document.getElementById('finalise-popup');if(existing)existing.remove();
+  var overlay=document.createElement('div');
+  overlay.id='finalise-popup';overlay.className='finalise-popup';
+  var inner=document.createElement('div');inner.className='finalise-box';
+  var dismissBtn=document.createElement('button');dismissBtn.className='finalise-dismiss';dismissBtn.textContent='×';
+  dismissBtn.onclick=function(){overlay.remove();};
+  var icon=document.createElement('div');icon.style.cssText='margin-bottom:12px;color:var(--green);display:flex;justify-content:center';icon.innerHTML=ic('check',40);
+  var heading=document.createElement('h2');heading.textContent='Registration complete';
+  var para=document.createElement('p');para.textContent='Food parcel request sent for preparation automatically.'+(hasFollowup?' A wellbeing follow-up is recommended for this household.':'');
+  var btns=document.createElement('div');btns.className='finalise-box-btns';
+  if(hasFollowup){
+    var wbBtn=document.createElement('button');wbBtn.className='btn btn-plum';wbBtn.style.justifyContent='center';
+    wbBtn.innerHTML=ic('wb',15)+'Open Wellbeing file';
+    wbBtn.onclick=function(){overlay.remove();STATE.wbRef=ref;STATE.wbTab=0;go('wellbeing');};
+    btns.appendChild(wbBtn);
+  }
+  var regBtn=document.createElement('button');regBtn.className='btn btn-ghost';regBtn.style.justifyContent='center';
+  regBtn.innerHTML=ic('cal',15)+'Back to Registrations';
+  regBtn.onclick=function(){overlay.remove();go('registrations');};
+  var stayBtn=document.createElement('button');stayBtn.className='btn btn-ghost';stayBtn.style.cssText='justify-content:center;color:var(--muted)';
+  stayBtn.textContent='Stay on this page';
+  stayBtn.onclick=function(){overlay.remove();};
+  btns.appendChild(regBtn);btns.appendChild(stayBtn);
+  inner.appendChild(dismissBtn);inner.appendChild(icon);inner.appendChild(heading);inner.appendChild(para);inner.appendChild(btns);
+  overlay.appendChild(inner);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+/* ══ Step 4: DISTRIBUTION (simplified — parcel sent automatically on finalise) ══ */
+function renderDistribution(r){
+  var wf=getWelfare(r);var complete=COMPLETE_STATUSES.indexOf(r.status)>=0;
+  var h='<div class="card" style="padding:22px 26px">';
+  if(complete){
+    h+='<div class="dist-complete"><div class="dc-hd">'+ic('check',16)+'Registration complete — food parcel requested automatically</div>';
+    h+='<div class="dc-sub">Group: '+(wf.assign&&wf.assign.group||'—')+' · Type: '+(wf.assign&&wf.assign.dist||'—')+(wf.endDate?' · Support until: '+esc(wf.endDate):'')+'</div></div>';
+    h+='<div class="callout green">'+ic('parcel',15)+'<span>Food parcel preparation was triggered when you clicked "Registration Complete". No further action needed here. Developer: wire to Pick Plan system.</span></div>';
+    if(r.status==='Registration Complete - WB follow up required [complex]'){
+      h+='<div class="callout plum" style="margin-top:12px">'+ic('wb',15)+'<b>Wellbeing follow-up required.</b> This household has been flagged for a wellbeing interview.</div>';
+      h+='<button class="btn btn-plum" style="margin-top:12px" onclick="STATE.wbRef=\''+r.ref+'\';STATE.wbTab=0;go(\'wellbeing\')">'+ic('link',15)+'Open Wellbeing file</button>';
+    }
+  }else{
+    h+='<div class="callout amber">'+ic('warn',15)+'Registration not yet complete. Return to Step 3 to finalise.</div>';
+    h+='<button class="btn btn-ghost" onclick="setStep(3)">'+ic('back',15)+'Go to Registration Finalising</button>';
+  }
+  h+='</div>';return h;
+}
+
+/* ── shared welfare field helpers ── */
+function wfSet(ref,path,v){var wf=getWelfare(getRef(ref));deepSet(wf,path,v);render();}
+function wfToggle(ref,g,k){var wf=getWelfare(getRef(ref));wf[g]=wf[g]||{};wf[g][k]=!wf[g][k];render();}
+function wfArr(ref,k,v){var wf=getWelfare(getRef(ref));wf[k]=wf[k]||[];var i=wf[k].indexOf(v);if(i>=0)wf[k].splice(i,1);else wf[k].push(v);render();}
+console.log('OBA detail views loaded');
+</script>

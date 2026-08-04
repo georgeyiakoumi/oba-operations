@@ -1,0 +1,553 @@
+<script>
+/* ══════════════════════════════════════════════════════
+   WELLBEING  (password-gated, 4 sub-tabs)
+══════════════════════════════════════════════════════ */
+/* Sub-tab 0: Overview (actions panel + complex list)
+   Sub-tab 1: Case Notes (for a selected person)
+   Sub-tab 2: Tasks (welfare task framework assignments)
+   Sub-tab 3: Risk & Referrals (the risk area forms)            */
+
+/* ══ Beneficiary file with referral history ══ */
+var STATE_benRef=null;
+function openBeneFile(ref){STATE_benRef=ref;render();window.scrollTo(0,0);}
+function renderBeneFile(){
+  var r=getRef(STATE_benRef);if(!r){STATE_benRef=null;return renderBen();}
+  /* gather all historical + live referrals for this household by surname */
+  var surname=(r.name||'').split(' ').pop().toLowerCase();
+  var liveRefs=(DATA.referrals||[]).filter(function(x){return(x.name||'').toLowerCase().indexOf(surname)>=0;});
+  var hist=(DATA.historicalReferrals||[]).filter(function(x){return(x.household||'').toLowerCase().indexOf(surname)>=0;});
+  hist.sort(function(a,b){return(a.openFrom||'').localeCompare(b.openFrom||'');});
+  var h=renderBreadcrumb([['Beneficiaries','ben']],r.name);
+  h+='<div class="card detail-head" style="margin-bottom:18px">';
+  h+='<div class="dh-name">'+esc(r.name)+'</div>';
+  h+='<div class="dh-meta">'+esc(r.borough)+' \xb7 '+hhWords(r)+(r.openFrom?' \xb7 Open '+monthsOpen(r):'')+'</div>';
+  var flags=flagList(r);var ftags=renderFlags(r,{showEmerg:true,showFinal:true});
+  if(ftags)h+='<div class="dh-flags" style="margin-top:8px">'+ftags+'</div>';
+  h+='</div>';
+  /* referral history boxes */
+  h+='<h2 style="margin-bottom:12px">Referral history</h2>';
+  h+='<div class="ref-hist-row">';
+  hist.forEach(function(x){
+    h+='<button class="ref-hist-box" onclick="showRefPopup(\'hist\',\''+esc(x.ref)+'\')">';
+    h+='<div class="rh-label">'+esc(x.ref)+' \xb7 Historical</div>';
+    h+='<div class="rh-period">'+esc(x.openFrom)+' \u2013 '+esc(x.openTo)+'</div>';
+    h+='<div class="rh-status">'+esc(x.status)+'</div></button>';
+  });
+  liveRefs.forEach(function(x){
+    var isCurrent=(x.ref===r.ref);
+    h+='<button class="ref-hist-box'+(isCurrent?' current':'')+'" onclick="showRefPopup(\'live\',\''+esc(x.ref)+'\')">';
+    h+='<div class="rh-label">'+esc(x.ref)+(isCurrent?' \xb7 CURRENT':'')+'</div>';
+    h+='<div class="rh-period">'+(x.openFrom?esc(x.openFrom)+' \u2013 '+esc(x.openTo||'present'):esc(x.receivedDate)+' (received)')+'</div>';
+    h+='<div class="rh-status">'+esc(x.status)+'</div></button>';
+  });
+  h+='</div>';
+  /* current record summary */
+  h+='<h2 style="margin-bottom:12px">Current record</h2>';
+  h+='<div class="card" style="padding:22px 26px;margin-bottom:18px">';
+  var dfields=[['Name',r.name],['Borough',r.borough],['Household',hhWords(r)],['Children ages',r.ages||'\u2014'],['Phone',r.phone],['Email',r.email],['Received',r.receivedDate],['Support period',monthsOpen(r)],['Group',r.distributionGroup||'\u2014'],['Distribution',r.distributionType||'\u2014'],['Officer',r.wbOfficer||'\u2014']];
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">';
+  dfields.forEach(function(f){h+='<div><div class="mini-label">'+f[0]+'</div><div style="font-size:14.5px;font-weight:500">'+esc(f[1])+'</div></div>';});
+  h+='</div>';
+  if(r.circumstances)h+='<div style="margin-top:14px"><div class="mini-label">Reason for referral</div><div style="font-size:14.5px;line-height:1.55;background:#f9f8f2;border-radius:8px;padding:12px;margin-top:4px">'+esc(r.circumstances)+'</div></div>';
+  h+='<div style="margin-top:16px"><button class="btn btn-ghost" onclick="go(\'detail\',\''+r.ref+'\')">'+ic('ref',15)+'Open full registration file</button></div>';
+  h+='</div>';
+  h+='<div id="ref-popup-anchor"></div>';
+  return h;
+}
+/* popup to show a referral\'s info */
+function showRefPopup(type,refId){
+  var existing=document.getElementById('ref-popup');if(existing)existing.remove();
+  var overlay=document.createElement('div');overlay.id='ref-popup';overlay.className='modal-overlay';
+  var box=document.createElement('div');box.className='modal-box';
+  var head=document.createElement('div');head.className='modal-head';
+  var closeBtn=document.createElement('button');closeBtn.className='modal-close';closeBtn.textContent='\xd7';closeBtn.onclick=function(){overlay.remove();};
+  var body=document.createElement('div');body.className='modal-body';
+  var foot=document.createElement('div');foot.className='modal-foot';
+  if(type==='live'){
+    var r=getRef(refId);if(!r){overlay.remove();return;}
+    head.innerHTML='<h2>'+esc(r.ref)+' \u2014 '+esc(r.name)+'</h2>';
+    var grid='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    [['Borough',r.borough],['Received',r.receivedDate],['Adults',r.adults],['Children',r.children+' ('+r.ages+')'],['Phone',r.phone],['Email',r.email],['Status',r.status],['Period',monthsOpen(r)]].forEach(function(f){grid+='<div><div class="mini-label">'+f[0]+'</div><div style="font-size:14px">'+esc(f[1]||'\u2014')+'</div></div>';});
+    grid+='</div>';
+    if(r.circumstances)grid+='<div style="margin-top:14px"><div class="mini-label">Circumstances</div><div style="font-size:14px;line-height:1.55;background:#f9f8f2;border-radius:8px;padding:12px;margin-top:4px">'+esc(r.circumstances)+'</div></div>';
+    body.innerHTML=grid;
+    var openBtn=document.createElement('button');openBtn.className='btn btn-green';openBtn.innerHTML=ic('ref',15)+'Open full file';
+    openBtn.onclick=function(){overlay.remove();go('detail',refId);};
+    foot.appendChild(openBtn);
+  } else {
+    var hist=(DATA.historicalReferrals||[]).find(function(x){return x.ref===refId;});
+    if(!hist){overlay.remove();return;}
+    head.innerHTML='<h2>'+esc(hist.ref)+' \u2014 '+esc(hist.household)+'</h2>';
+    var grid2='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+    [['Borough',hist.borough],['Received',hist.receivedDate],['Adults',hist.adults],['Children',hist.children+' ('+hist.ages+')'],['Phone',hist.phone],['Email',hist.email],['Period',hist.openFrom+' \u2013 '+hist.openTo],['Status',hist.status]].forEach(function(f){grid2+='<div><div class="mini-label">'+f[0]+'</div><div style="font-size:14px">'+esc(f[1]||'\u2014')+'</div></div>';});
+    grid2+='</div>';
+    if(hist.circumstances)grid2+='<div style="margin-top:14px"><div class="mini-label">Circumstances</div><div style="font-size:14px;line-height:1.55;background:#f9f8f2;border-radius:8px;padding:12px;margin-top:4px">'+esc(hist.circumstances)+'</div></div>';
+    if(hist.notes)grid2+='<div style="margin-top:10px"><div class="mini-label">Closure notes</div><div style="font-size:14px;background:#f9f8f2;border-radius:8px;padding:12px;margin-top:4px">'+esc(hist.notes)+'</div></div>';
+    body.innerHTML=grid2;
+  }
+  var closeBtn2=document.createElement('button');closeBtn2.className='btn btn-ghost';closeBtn2.textContent='Close';closeBtn2.onclick=function(){overlay.remove();};
+  foot.appendChild(closeBtn2);
+  head.appendChild(closeBtn);box.appendChild(head);box.appendChild(body);box.appendChild(foot);overlay.appendChild(box);
+  overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
+
+var WB_VOLUNTEERS=['All','Sophie','Sonya','Despina','Olivia'];
+
+function renderWbLogin(){
+  return '<div class="card pw-gate"><div class="pw-ic">'+ic('lock',36)+'</div><h2>Wellbeing access</h2>'+
+    '<p>This section contains complex case notes and sensitive information. It is password-protected.<br>'+
+    '<em style="font-size:11.5px;color:var(--faint)">Developer: replace with proper role-based auth before going live.</em></p>'+
+    '<div class="pw-form"><input type="password" id="pw-input" placeholder="Enter password…" onkeydown="if(event.key===\'Enter\')checkPw()">'+
+    '<button class="btn btn-plum" onclick="checkPw()">'+ic('arrow',15)+'Enter</button></div>'+
+    '<p id="pw-err" style="color:var(--red);font-size:13px;margin-top:10px;display:none">Incorrect password.</p></div>';
+}
+function checkPw(){var v=(document.getElementById('pw-input')||{}).value||'';if(v===WB_PASSWORD){WB_UNLOCKED=true;render();}else{var el=document.getElementById('pw-err');if(el)el.style.display='block';}}
+
+function renderWellbeing(){
+  if(!WB_UNLOCKED) return renderWbLogin();
+  if(STATE.wbRef) return renderWbFile(getRef(STATE.wbRef));
+  // top-level tabs: Overview | All Cases | To-do / Notes
+  var tabLabels=[['star','Overview'],['users','All Cases'],['note','To-do / Notes']];
+  var h='<div class="eyebrow">Wellbeing</div><div class="head-row" style="margin-bottom:0">';
+  h+='<h1>Wellbeing</h1>';
+  h+='<button class="btn btn-ghost" onclick="WB_UNLOCKED=false;render()" style="white-space:nowrap">'+ic('lock',15)+'Lock</button></div>';
+  h+='<div class="wb-top-tabs">';
+  tabLabels.forEach(function(t,i){h+='<button class="wb-top-tab'+(STATE.wbMainTab===i?' on':'')+'" onclick="STATE.wbMainTab='+i+';render()">'+ic(t[0],15)+t[1]+'</button>';});
+  h+='</div>';
+  if(STATE.wbMainTab===0) h+=renderWbOverview();
+  else if(STATE.wbMainTab===1) h+=renderWbAllCases();
+  else h+=renderWbTodo();
+  return h;
+}
+
+function renderWbOverview(){
+  var refs=DATA.referrals||[];
+  var today=new Date(); var todayStr=today.toISOString().slice(0,10);
+  // Complex cases open to wellbeing
+  var complex=refs.filter(function(r){return isComplex(r)&&COMPLETE_STATUSES.indexOf(r.status)>=0;});
+  // Wellbeing follow-up appointments (apptDate set + complex)
+  var wbAppts=refs.filter(function(r){return r.apptDate&&isComplex(r);});
+  // Pending volunteer tasks (across all complex cases)
+  var allTasks=[];
+  complex.forEach(function(r){var wf=getWelfare(r);Object.keys(wf.tasks||{}).forEach(function(area){(wf.tasks[area]||[]).forEach(function(tk){if(tk.status!=='Completed')allTasks.push({ref:r.ref,name:r.name,area:area,tk:tk,r:r});});});});
+  // Pending service user homework
+  var homeworkPending=complex.filter(function(r){var wf=getWelfare(r);return wf.homework&&wf.homework.trim();});
+  // 3rd parcel check: final month + complex
+  var thirdParcel=complex.filter(function(r){return isFinalMonth(r);});
+  // Count follow-ups booked this week (next Monday)
+  var nextMon=new Date();nextMon.setDate(nextMon.getDate()+((8-nextMon.getDay())%7||7));
+  var monStr=nextMon.toISOString().slice(0,10);
+  var wbApptThisWeek=wbAppts.filter(function(r){return r.apptDate===monStr;});
+
+  var h='';
+  // ── Stat strip ──
+  h+='<div class="wb-stat-strip">';
+  h+='<div class="wb-stat"><div class="ws-num">'+complex.length+'</div><div class="ws-lab">Open to Wellbeing</div></div>';
+  h+='<div class="wb-stat'+(wbApptThisWeek.length?' urgent-wb':'')+'"><div class="ws-num">'+wbApptThisWeek.length+'</div><div class="ws-lab">Follow-up appts this Monday</div></div>';
+  h+='<div class="wb-stat'+(allTasks.length?' urgent-wb':'')+'"><div class="ws-num">'+allTasks.length+'</div><div class="ws-lab">Pending volunteer tasks</div></div>';
+  h+='<div class="wb-stat"><div class="ws-num">'+homeworkPending.length+'</div><div class="ws-lab">Pending service user actions</div></div>';
+  h+='</div>';
+
+  // ── Borough breakdown ──
+  h+='<div style="margin-bottom:24px">'+boroughBreakdown()+'</div>';
+  // ── Follow-up appointments ──
+  h+='<h2 style="margin-bottom:10px">Follow-up appointments booked</h2>';
+  if(!wbAppts.length){
+    h+='<div class="card placeholder" style="padding:20px;margin-bottom:22px">No follow-up appointments booked.</div>';
+  } else {
+    h+='<div class="card" style="margin-bottom:22px">';
+    var grouped={};
+    wbAppts.forEach(function(r){(grouped[r.apptDate]=grouped[r.apptDate]||[]).push(r);});
+    Object.keys(grouped).sort().forEach(function(day){
+      var list=grouped[day].sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
+      var d2=new Date(day+'T00:00:00');var label=isNaN(d2)?day:d2.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      h+='<div style="padding:10px 18px 4px;font-family:\'IBM Plex Mono\';font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);border-top:1px solid var(--line-soft)">'+label+'</div>';
+      list.forEach(function(r){
+        h+='<div class="appt-row" onclick="openWbFile(\''+r.ref+'\')"><div class="appt-time">'+esc(r.apptTime||'—')+'</div>';
+        h+='<div class="appt-info"><div class="appt-name">'+esc(r.name)+'</div><div class="appt-meta">'+esc(r.ref)+' · '+esc(r.borough)+(r.wbOfficer?' · '+esc(r.wbOfficer):'')+'</div></div>';
+        h+='<span style="color:var(--faint)">'+ic('arrow')+'</span></div>';
+      });
+    });
+    h+='</div>';
+  }
+
+  // ── Pending volunteer tasks with filter ──
+  h+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap"><h2>Pending volunteer tasks</h2>';
+  h+='<div class="vol-chips">';
+  WB_VOLUNTEERS.forEach(function(v){h+='<button class="vol-chip'+(STATE.volFilter===v?' on':'')+'" onclick="STATE.volFilter=\''+v+'\';render()">'+v+'</button>';});
+  h+='</div></div>';
+  var filteredTasks=allTasks.filter(function(t){return STATE.volFilter==='All'||t.tk.owner===STATE.volFilter;});
+  if(!filteredTasks.length){
+    h+='<div class="card placeholder" style="padding:20px;margin-bottom:22px">No pending volunteer tasks'+(STATE.volFilter!=='All'?' for '+STATE.volFilter:'')+'.</div>';
+  } else {
+    h+='<div class="card" style="margin-bottom:22px">';
+    filteredTasks.sort(function(a,b){return(a.tk.due||'9').localeCompare(b.tk.due||'9');});
+    filteredTasks.forEach(function(t){
+      var isPast=t.tk.due&&t.tk.due<todayStr;
+      h+='<div class="task-row'+(isPast?' overdue-row':'')+'" onclick="openWbFile(\''+t.ref+'\')">';
+      h+='<span class="tr-area'+(isPast?' overdue':'')+'">'+esc(t.area)+'</span>';
+      h+='<div class="tr-name">'+esc(t.name)+'<div style="font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px">'+esc(t.tk.note||'No note')+'</div></div>';
+      h+='<span class="tr-vol">'+esc(t.tk.owner||'Unassigned')+'</span>';
+      h+='<span class="tr-due'+(isPast?' past':'')+'">'+ic('clock',13)+(t.tk.due?esc(t.tk.due):'No date')+'</span>';
+      h+='<span style="color:var(--faint)">'+ic('arrow')+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  // ── Pending service user homework ──
+  h+='<h2 style="margin-bottom:10px">Pending service user actions</h2>';
+  if(!homeworkPending.length){
+    h+='<div class="card placeholder" style="padding:20px;margin-bottom:22px">No pending homework assigned.</div>';
+  } else {
+    h+='<div class="card" style="margin-bottom:22px">';
+    homeworkPending.forEach(function(r){
+      var wf=getWelfare(r);
+      h+='<div class="task-row" onclick="openWbFile(\''+r.ref+'\')">';
+      h+='<div class="bene-avatar" style="width:36px;height:36px;font-size:13px">'+esc(r.name.charAt(0))+'</div>';
+      h+='<div class="tr-name">'+esc(r.name)+'<div style="font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px">'+esc(wf.homework)+'</div></div>';
+      h+='<span class="tr-vol">'+esc(r.wbOfficer||'—')+'</span>';
+      h+='<span style="color:var(--faint)">'+ic('arrow')+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  // ── 3rd parcel check ──
+  h+='<h2 style="margin-bottom:6px">3rd Parcel — Check if wellbeing check needed</h2>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin-bottom:10px">Complex cases on their final month of support — consider whether a wellbeing review is needed before the 3rd parcel.</p>';
+  if(!thirdParcel.length){
+    h+='<div class="card placeholder" style="padding:20px">No complex cases currently on final month.</div>';
+  } else {
+    h+='<div class="card">';
+    thirdParcel.forEach(function(r){
+      h+='<div class="task-row" onclick="openWbFile(\''+r.ref+'\')">';
+      h+='<div class="bene-avatar" style="width:36px;height:36px;font-size:13px">'+esc(r.name.charAt(0))+'</div>';
+      h+='<div class="tr-name">'+esc(r.name)+'<div style="font-size:12.5px;color:var(--muted);font-weight:400;margin-top:2px">'+esc(r.ref)+' · '+esc(r.borough)+' · Open '+monthsOpen(r)+'</div></div>';
+      h+='<span class="flag-tag flag-final" style="font-size:11px">Final month</span>';
+      h+='<span style="color:var(--faint)">'+ic('arrow')+'</span></div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+
+function renderWbAllCases(){
+  var refs=DATA.referrals||[];
+  var q=(STATE.wbSearch||'').toLowerCase();
+  var complex=refs.filter(function(r){
+    var isWb=isComplex(r)&&COMPLETE_STATUSES.indexOf(r.status)>=0;
+    if(!isWb)return false;
+    if(q)return(r.name+' '+r.ref+' '+r.borough+' '+(r.wbOfficer||'')).toLowerCase().indexOf(q)>=0;
+    return true;
+  });
+  var h='<div class="head-row" style="margin-bottom:16px">';
+  h+='<div><p style="color:var(--muted);font-size:14px">'+complex.length+' case'+(complex.length!==1?'s':'')+' open to wellbeing</p></div>';
+  h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name, ref, borough, officer…" value="'+esc(STATE.wbSearch||'')+'" oninput="STATE.wbSearch=this.value;render()"></div></div>';
+  if(!complex.length){
+    h+='<div class="card placeholder">No cases match.</div>';return h;
+  }
+  h+='<div class="card">';
+  complex.forEach(function(r){
+    var flags=flagList(r),init=r.name.charAt(0).toUpperCase();
+    var wf=getWelfare(r);
+    var openTasks=0;Object.keys(wf.tasks||{}).forEach(function(a){(wf.tasks[a]||[]).forEach(function(tk){if(tk.status!=='Completed')openTasks++;});});
+    var noteCount=(DATA.notes||[]).filter(function(n){return n.ref===r.ref;}).length;
+    var tags=renderFlags(r,{showFinal:true});
+    h+='<div class="bene-card" onclick="openWbFile(\''+r.ref+'\')">'+
+      '<div class="bene-avatar">'+esc(init)+'</div>'+
+      '<div class="bene-info">'+
+        '<div class="bene-name">'+esc(r.name)+' '+tags+'</div>'+
+        '<div class="bene-meta">'+esc(r.ref)+' · '+esc(r.borough)+' · '+hhWords(r)+(r.openFrom?' · Open '+monthsOpen(r):'')+(r.wbOfficer?' · Officer: '+esc(r.wbOfficer):'')+'</div>'+
+        '<div class="bene-meta" style="margin-top:3px">'+
+          (openTasks?'<span style="color:var(--orange);font-weight:500">'+openTasks+' open task'+(openTasks>1?'s':'')+'</span>':'')+
+          (openTasks&&noteCount?' · ':'')+
+          (noteCount?noteCount+' note'+(noteCount>1?'s':''):'')+'</div>'+
+      '</div>'+statusPill(r)+'<span style="color:var(--faint);margin-left:8px">'+ic('arrow')+'</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function renderWbTodo(){
+  var items=DATA.wbNotes||[];
+  var h='';
+  // ── Volunteer rota ──
+  DATA.wbRota=DATA.wbRota||{};
+  var vols=['Sophie','Sonya','Despina','Olivia'];
+  var SLOTS_PER_VOL=8; // 09:00–10:45 at 15-min intervals = 8 slots per volunteer
+  // Generate next 4 Mondays
+  var mondays=[];
+  var d=new Date();d.setDate(d.getDate()+((8-d.getDay())%7||7));
+  for(var i=0;i<4;i++){var nd=new Date(d);nd.setDate(d.getDate()+i*7);mondays.push(nd);}
+  h+='<div class="card" style="padding:20px 24px;margin-bottom:20px">';
+  h+='<h2 style="margin-bottom:4px">Volunteer rota</h2>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin-bottom:14px">Mark who is absent for each Monday. Available appointment slots update automatically (1 slot per volunteer per 15 mins).</p>';
+  h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13.5px">';
+  h+='<thead><tr><th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:500;font-size:12px">Volunteer</th>';
+  mondays.forEach(function(mon){
+    var label=mon.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    h+='<th style="text-align:center;padding:8px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:500;font-size:12px">'+label+'</th>';
+  });
+  h+='<th style="text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);color:var(--muted);font-weight:500;font-size:12px">Notes</th></tr></thead><tbody>';
+  vols.forEach(function(vol){
+    h+='<tr><td style="padding:10px 12px;font-weight:500;border-bottom:1px solid var(--line-soft)">'+vol+'</td>';
+    mondays.forEach(function(mon){
+      var key=vol+'_'+mon.toISOString().slice(0,10);
+      var absent=DATA.wbRota[key]===true;
+      h+='<td style="text-align:center;padding:8px 12px;border-bottom:1px solid var(--line-soft)">';
+      h+='<button onclick="DATA.wbRota=DATA.wbRota||{};DATA.wbRota[\''+key+'\']='+(!absent)+';render()" ';
+      h+='style="padding:5px 14px;border-radius:7px;border:1px solid '+(absent?'var(--red)':'var(--line)')+';background:'+(absent?'var(--red-bg)':'#fff')+';color:'+(absent?'var(--red)':'var(--muted)')+';font-size:12.5px;cursor:pointer">';
+      h+=(absent?'Away':'In')+'</button></td>';
+    });
+    var note=DATA.wbRota[vol+'_note']||'';
+    h+='<td style="padding:8px 12px;border-bottom:1px solid var(--line-soft)"><input class="tx-field" style="font-size:12.5px;padding:6px 10px" placeholder="e.g. holiday" value="'+esc(note)+'" onchange="DATA.wbRota[\''+vol+'_note\']=this.value"></td></tr>';
+  });
+  // Slot summary row
+  h+='<tr style="background:#f5f4ec"><td style="padding:10px 12px;font-weight:600;font-size:13px;color:var(--green-deep)">Slots available</td>';
+  mondays.forEach(function(mon){
+    var dateKey=mon.toISOString().slice(0,10);
+    var absent=vols.filter(function(v){return DATA.wbRota[v+'_'+dateKey]===true;}).length;
+    var present=vols.length-absent;
+    var slots=present*SLOTS_PER_VOL;
+    h+='<td style="text-align:center;padding:10px 12px;font-weight:600;font-size:13px;color:'+(slots===0?'var(--red)':slots<16?'var(--orange)':'var(--green)')+'">';
+    h+=slots+' <span style="font-weight:400;font-size:11.5px;color:var(--muted)">('+present+' vol'+(present!==1?'s':'')+')</span></td>';
+  });
+  h+='<td></td></tr>';
+  h+='</tbody></table></div>';
+  h+='</div>';
+  // Meeting info card
+  h+='<div class="card" style="padding:20px 24px;margin-bottom:20px">';
+  h+='<h2 style="margin-bottom:14px">Next team meeting</h2>';
+  h+='<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">';
+  h+='<input class="tx-field" style="max-width:200px" type="text" placeholder="DD/MM/YYYY" id="wb-meeting-date" value="'+esc(DATA.wbMeetingDate||'')+'" onchange="DATA.wbMeetingDate=this.value">';
+  h+='<input class="tx-field" style="flex:1;min-width:200px" type="text" placeholder="Location or Zoom link…" id="wb-meeting-loc" value="'+esc(DATA.wbMeetingLoc||'')+'" onchange="DATA.wbMeetingLoc=this.value">';
+  h+='</div>';
+  if(DATA.wbMeetingDate)h+='<p style="margin-top:8px;font-size:13.5px;color:var(--green-deep)">'+ic('cal',14)+' Next meeting: <b>'+esc(DATA.wbMeetingDate)+'</b>'+(DATA.wbMeetingLoc?' — '+esc(DATA.wbMeetingLoc):'')+'</p>';
+  h+='<label class="field-label" style="margin-top:14px">Agenda items</label>';
+  h+='<textarea class="ta-field" placeholder="Add agenda items, one per line…" style="min-height:80px" onchange="DATA.wbAgenda=this.value">'+esc(DATA.wbAgenda||'')+'</textarea>';
+  h+='</div>';
+  // Shared notes / to-do
+  h+='<div class="card" style="padding:20px 24px"><h2 style="margin-bottom:6px">Team notes & to-do</h2>';
+  h+='<p style="color:var(--muted);font-size:13.5px;margin-bottom:14px">Visible to all wellbeing volunteers. Not linked to any specific case.</p>';
+  h+='<div style="display:grid;grid-template-columns:160px 1fr 140px;gap:10px;margin-bottom:10px">';
+  var cats=['General','Follow up','Admin','Meeting note','Resource'];
+  h+='<select class="tx-field" id="wbn-cat"><option>'+cats.join('</option><option>')+'</option></select>';
+  h+='<input class="tx-field" id="wbn-text" placeholder="Note or to-do item…">';
+  h+='<input class="tx-field" id="wbn-author" placeholder="Your name">';
+  h+='</div>';
+  h+='<button class="btn btn-ghost" style="margin-bottom:18px" onclick="addWbTeamNote()">'+ic('plus',14)+'Add note</button>';
+  if(!items.length){
+    h+='<p style="color:var(--muted);font-size:14px">No notes yet.</p>';
+  } else {
+    items.slice().reverse().forEach(function(n){
+      h+='<div class="notepad-item"><div class="notepad-head"><span class="notepad-ts">'+esc(n.date)+'</span><span class="notepad-cat">'+esc(n.cat)+'</span><span class="notepad-author">'+esc(n.author)+'</span></div><div class="notepad-text">'+esc(n.text)+'</div></div>';
+    });
+  }
+  h+='</div>';
+  return h;
+}
+// DEV[6]: persist team notes to a WBTeamNotes sheet tab via Code.gs — currently in-session only
+function addWbTeamNote(){
+  var text=(document.getElementById('wbn-text')||{}).value||'';
+  var author=(document.getElementById('wbn-author')||{}).value||'—';
+  var cat=(document.getElementById('wbn-cat')||{}).value||'General';
+  if(!text.trim()){toast('Please write a note first');return;}
+  DATA.wbNotes=DATA.wbNotes||[];
+  var date=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  DATA.wbNotes.push({date:date,author:author,cat:cat,text:text.trim()});
+  toast('Note added');render();
+}
+
+function openWbFile(ref){STATE.wbRef=ref;STATE.wbTab=0;STATE.view='wellbeing';render();window.scrollTo(0,0);}
+
+/* ── Person file: summary header + tabs (Overview, Notes, Tasks) ── */
+function renderWbFile(r){
+  if(!r){STATE.wbRef=null;return renderWbList();}
+  var flags=flagList(r);var fstr=flags.length?flags.map(function(f){return f.charAt(0).toUpperCase()+f.slice(1);}).join(', '):'None';
+  /* open task count */
+  var wf=getWelfare(r);var openTasks=0,doneTasks=0;
+  Object.keys(wf.tasks||{}).forEach(function(area){(wf.tasks[area]||[]).forEach(function(tk){if(tk.status==='Completed')doneTasks++;else openTasks++;});});
+  var h=renderBreadcrumb([['Wellbeing','wellbeing'],['All Cases','wellbeing']],r.name);
+  /* summary header */
+  h+='<div class="card detail-head">';
+  h+='<div class="dh-eyebrow">'+esc(r.ref)+' · Wellbeing</div>';
+  h+='<div class="dh-name">'+esc(r.name)+'</div>';
+  h+='<div class="dh-meta">'+detailTagline(r)+'</div>';
+  var ftags=renderFlags(r,{showEmerg:true,showFinal:true});
+  if(ftags)h+='<div class="dh-flags" style="margin-top:8px">'+ftags+'</div>';
+  h+='</div>';
+  /* summary DataList cards */
+  function dlCard(title,rows){
+    var c='<div class="datalist-card"><div class="dl-title">'+title+'</div>';
+    rows.forEach(function(row){c+='<div class="dl-row"><span class="dl-label">'+row[0]+'</span><span class="dl-value">'+esc(row[1]||'—')+'</span></div>';});
+    return c+'</div>';
+  }
+  h+='<div class="datalist-grid" style="margin-bottom:20px">';
+  h+=dlCard('Case Info',[['Officer',r.wbOfficer||'Unassigned'],['Status',r.status],['Support',monthsOpen(r)]]);
+  h+=dlCard('Household',[['Adults',r.adults],['Children',formatChildren(r.children,r.ages)],['Borough',r.borough]]);
+  h+=dlCard('Activity',[['Open tasks',openTasks+''],['Done tasks',doneTasks+''],['Notes',(DATA.notes||[]).filter(function(n){return n.ref===r.ref;}).length+'']]);
+  h+='</div>';
+  /* tabs */
+  var tabs=[['Overview','star'],['Case Notes','note'],['Tasks','task']];
+  var tabBadges=[null,null,(openTasks?openTasks:null)];
+  h+='<div class="wb-tabs">';
+  tabs.forEach(function(t,i){
+    h+='<button class="wb-tab'+(STATE.wbTab===i?' on':'')+'" onclick="STATE.wbTab='+i+';render()">'+
+      ic(t[1],15)+t[0]+(tabBadges[i]?'<span class="sub-badge" style="margin-left:6px">'+tabBadges[i]+'</span>':'')+
+      '</button>';
+  });
+  h+='</div>';
+  if(STATE.wbTab===0) h+=renderWbFileOverview(r,wf,openTasks,doneTasks);
+  else if(STATE.wbTab===1) h+=renderWbFileNotes(r);
+  else h+=renderWbFileTasks(r,wf);
+  return h;
+}
+
+/* ── File tab 0: Overview ── */
+function renderWbFileOverview(r,wf,openTasks,doneTasks){
+  var myActions=(DATA.actions||[]).filter(function(a){return a.ref===r.ref&&a.status!=='done';});
+  var notes=(DATA.notes||[]).filter(function(n){return n.ref===r.ref;});
+  var lastNote=notes.length?notes[notes.length-1]:null;
+  var h='';
+  /* quick stats */
+  h+='<div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">';
+  h+='<div class="stat-c"><div class="sl">Open tasks</div><div class="sn">'+openTasks+'</div></div>';
+  h+='<div class="stat-c"><div class="sl">Completed tasks</div><div class="sn">'+doneTasks+'</div></div>';
+  h+='<div class="stat-c"><div class="sl">Notes logged</div><div class="sn">'+notes.length+'</div></div>';
+  h+='</div>';
+  /* actions for this person */
+  if(myActions.length){
+    h+='<h2 style="margin-bottom:10px">Open actions</h2><div class="card" style="margin-bottom:18px">';
+    myActions.forEach(function(a){
+      h+='<div class="action-card pri-'+esc(a.priority)+'"><div class="action-ic">'+ic(a.priority==='urgent'?'warn':'clock',16)+'</div>';
+      h+='<div class="action-body"><div class="action-top"><span class="pri-tag">'+esc(a.priority)+'</span><span style="font-weight:600">'+esc(a.action)+'</span></div>';
+      h+='<div class="action-meta"><span>'+ic('clock',13)+' Due: '+esc(a.dueBy)+'</span><span>Officer: '+esc(a.officer)+'</span></div></div>';
+      h+='<button class="action-done" onclick="completeActionUI(\''+a.actionId+'\')">Mark done</button></div>';
+    });
+    h+='</div>';
+  }
+  /* last note preview */
+  if(lastNote){
+    h+='<h2 style="margin-bottom:10px">Most recent note</h2>';
+    h+='<div class="card" style="padding:18px 22px;margin-bottom:18px"><div class="note-head"><span class="note-date">'+esc(lastNote.date)+'</span><span class="note-cat">'+esc(lastNote.category)+'</span>'+(lastNote.duration?'<span class="note-dur">'+ic('clock',13)+esc(lastNote.duration)+' min</span>':'')+'<span class="note-author">— '+esc(lastNote.author)+'</span></div><div class="note-text">'+esc(lastNote.text)+'</div></div>';
+  }
+  /* quick-add note */
+  var catOpts=NOTE_CATS.map(function(c){return'<option>'+c+'</option>';}).join('');
+  h+='<h2 style="margin-bottom:12px">Add a note</h2>';
+  h+='<div class="card note-input-card">';
+  var nowDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).split('/').join('/');
+  var nowTime=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  h+='<div class="ni-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">';
+  h+='<div><label>Category</label><select class="tx-field" id="ni-cat">'+catOpts+'</select></div>';
+  h+='<div><label>Date</label><input class="tx-field" id="ni-date" type="text" placeholder="DD/MM/YYYY" value="'+nowDate+'"></div>';
+  h+='<div><label>Time</label><input class="tx-field" id="ni-time" type="text" placeholder="HH:MM" value="'+nowTime+'"></div>';
+  h+='<div><label>Duration (mins)</label><input class="tx-field" id="ni-dur" type="number" min="0" placeholder="e.g. 20"></div>';
+  h+='</div>';
+  h+='<div style="margin-top:8px"><label>Author</label><input class="tx-field" id="ni-author" placeholder="Your name" value="'+esc(r.wbOfficer||'')+'"></div>';
+  h+='<textarea class="ta-field" id="ni-text" placeholder="What was discussed, actions taken, follow-ups needed…" style="min-height:80px;margin-top:8px"></textarea>';
+  h+='<div style="margin-top:12px"><button class="btn btn-plum" onclick="addNote(\''+r.ref+'\')">'+ic('plus',15)+'Add note</button><button class="btn btn-ghost" style="margin-left:10px" onclick="STATE.wbTab=1;render()">'+ic('note',15)+'View all notes</button></div></div>';
+  return h;
+}
+
+/* ── File tab 1: Case Notes ── */
+function renderWbFileNotes(r){
+  var notes=(DATA.notes||[]).filter(function(n){return n.ref===r.ref;}).slice().reverse();
+  var catOpts=NOTE_CATS.map(function(c){return'<option>'+c+'</option>';}).join('');
+  var h='<div class="card note-input-card"><h2 style="margin-bottom:14px">Add a note</h2>';
+  var nowDate2=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}).split('/').join('/');
+  var nowTime2=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  h+='<div class="ni-grid" style="grid-template-columns:1fr 1fr 1fr 1fr">';
+  h+='<div><label>Category</label><select class="tx-field" id="ni-cat">'+catOpts+'</select></div>';
+  h+='<div><label>Date</label><input class="tx-field" id="ni-date" type="text" placeholder="DD/MM/YYYY" value="'+nowDate2+'"></div>';
+  h+='<div><label>Time</label><input class="tx-field" id="ni-time" type="text" placeholder="HH:MM" value="'+nowTime2+'"></div>';
+  h+='<div><label>Duration (mins)</label><input class="tx-field" id="ni-dur" type="number" min="0" placeholder="e.g. 20"></div>';
+  h+='</div>';
+  h+='<div style="margin-top:8px"><label>Author</label><input class="tx-field" id="ni-author" placeholder="Your name" value="'+esc(r.wbOfficer||'')+'"></div>';
+  h+='<textarea class="ta-field" id="ni-text" placeholder="What was discussed, actions taken, follow-ups needed…" style="min-height:80px;margin-top:8px"></textarea>';
+  h+='<div style="margin-top:12px"><button class="btn btn-plum" onclick="addNote(\''+r.ref+'\')">'+ic('plus',15)+'Add note</button></div></div>';
+  h+='<div class="card" style="padding:20px 24px"><h2 style="margin-bottom:6px">Previous notes</h2><p style="color:var(--muted);font-size:13px;margin-bottom:8px">Duration logged for time-per-case auditing.</p>';
+  if(!notes.length)h+='<p style="color:var(--muted);padding:14px 0">No notes recorded yet.</p>';
+  notes.forEach(function(n){h+='<div class="note-item"><div class="note-head"><span class="note-date">'+esc(n.date)+'</span><span class="note-cat">'+esc(n.category)+'</span>'+(n.duration?'<span class="note-dur">'+ic('clock',13)+esc(n.duration)+' min</span>':'')+'<span class="note-author">— '+esc(n.author)+'</span></div><div class="note-text">'+esc(n.text)+'</div></div>';});
+  h+='</div>';
+  return h;
+}
+
+/* ── File tab 2: Tasks ── */
+function renderWbFileTasks(r,wf){
+  var allTasks=[];
+  RISK_AREAS.forEach(function(ra){(wf.tasks[ra.id]||[]).forEach(function(tk,idx){allTasks.push({ra:ra,tk:tk,idx:idx});});});
+  var open=allTasks.filter(function(t){return(t.tk.status||'In-Progress')!=='Completed';});
+  var done=allTasks.filter(function(t){return t.tk.status==='Completed';});
+  var h='';
+  /* add task area */
+  h+='<div class="card" style="padding:18px 22px;margin-bottom:18px"><h2 style="margin-bottom:12px">Add a task</h2>';
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
+  RISK_AREAS.forEach(function(ra){h+='<button class="btn btn-ghost" style="font-size:13px" onclick="addWbTaskAndScroll(\''+r.ref+'\',\''+ra.id+'\')">' +ic(ra.icon,14)+ra.title+'</button>';});
+  h+='</div></div>';
+  function taskSection(list,sectionTitle){
+    if(!list.length)return'';
+    var s='<h2 style="margin-bottom:10px;font-size:16px;'+(sectionTitle==='Completed'?'color:var(--muted)':'')+'">'+sectionTitle+'</h2>';
+    list.forEach(function(item){
+      var tk=item.tk,ra=item.ra,idx=item.idx;
+      var statusCls=tk.status==='Completed'?'sp-done':tk.status==='In-Progress'?'sp-prog':'sp-plan';
+      s+='<div class="task-block" style="margin-bottom:12px"><div class="tb-top">';
+      s+='<span class="flag-tag flag-complex" style="background:var(--green-chip-bg);color:var(--green-chip-tx)">'+esc(ra.title)+'</span>';
+      s+='<span class="tb-created">Created '+esc(tk.created||'')+'</span>';
+      s+='<span class="tb-actions"><button onclick="removeWbTask(\''+r.ref+'\',\''+ra.id+'\','+idx+');render()">Remove</button></span></div>';
+      s+='<div class="mini-label" style="margin-top:12px">Issue / note</div>';
+      s+='<textarea class="ta-field" placeholder="Brief description of the task…" onchange="wbTaskField(\''+r.ref+'\',\''+ra.id+'\','+idx+',\'note\',this.value)">'+esc(tk.note||'')+'</textarea>';
+      s+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:12px">';
+      s+='<div><div class="mini-label">Refer to</div><div class="select-chips" style="flex-wrap:wrap;gap:6px">';
+      ra.partners.forEach(function(p){s+='<button class="schip'+(tk.partner===p?' on':'')+'" style="font-size:12px;padding:5px 10px" onclick="wbTaskField(\''+r.ref+'\',\''+ra.id+'\','+idx+',\'partner\',\''+esc(p)+'\');render()">'+p+'</button>';});
+      s+='</div></div>';
+      s+='<div><div class="mini-label">Allocated volunteer</div><input class="tx-field" placeholder="Name…" value="'+esc(tk.owner||'')+'" onchange="wbTaskField(\''+r.ref+'\',\''+ra.id+'\','+idx+',\'owner\',this.value)"><div class="mini-label" style="margin-top:10px">Due date</div><div style="display:flex;gap:8px;align-items:center"><input id="dt_due_'+idx+'" class="tx-field" type="text" placeholder="DD/MM/YYYY" value="'+esc(tk.due||'')+'" style="max-width:180px" onchange="wbTaskField(\''+r.ref+'\',\''+ra.id+'\','+idx+',\'due\',this.value)"><button type="button" class="btn btn-ghost" style="padding:8px 12px;font-size:13px;white-space:nowrap" onclick="(function(){var t=new Date();var dd=String(t.getDate()).padStart(2,\'0\');var mm=String(t.getMonth()+1).padStart(2,\'0\');var s=dd+\'/\'+mm+\'/\'+t.getFullYear();document.getElementById(\'dt_due_'+idx+'\').value=s;wbTaskField(\''+r.ref+'\',\''+ra.id+'\','+idx+',\'due\',s);})()">Today</button></div></div>';
+      s+='</div>';
+      s+='<div class="status-toggle" style="margin-top:10px">';
+      ['In-Progress','Completed'].forEach(function(st){s+='<button class="stog'+(((tk.status||'In-Progress')===st)?' on':'')+'" onclick="wbTaskField(\''+r.ref+'\',\''+ra.id+'\','+idx+',\'status\',\''+st+'\');render()">'+st+'</button>';});
+      s+='</div></div>';
+    });
+    return s;
+  }
+  if(!allTasks.length){
+    h+='<div class="card placeholder"><div class="pic">'+ic('task',28)+'</div><b>No tasks yet</b><p style="margin-top:8px">Use the buttons above to create a task for any risk area.</p></div>';
+    return h;
+  }
+  h+=taskSection(open,'Open tasks');
+  if(done.length)h+=taskSection(done,'Completed');
+  return h;
+}
+function toggleArea(id){STATE.openArea=(STATE.openArea===id?null:id);render();}
+function wfAssess(ref,id,v){var wf=getWelfare(getRef(ref));wf.assess=wf.assess||{};wf.assess[id]=v;render();}
+function wfSetNote(ref,id,v){var wf=getWelfare(getRef(ref));wf.assessNote=wf.assessNote||{};wf.assessNote[id]=v;}
+function addWbTask(ref,area){var wf=getWelfare(getRef(ref));wf.tasks=wf.tasks||{};wf.tasks[area]=wf.tasks[area]||[];wf.tasks[area].push({status:'In-Progress',created:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),note:'',partner:'',owner:'',due:''});STATE.openArea=area;}
+function addWbTaskAndScroll(ref,area){addWbTask(ref,area);STATE.wbTab=2;render();setTimeout(function(){var tasks=document.querySelectorAll('.task-block');if(tasks.length){tasks[tasks.length-1].scrollIntoView({behavior:'smooth',block:'start'});}toast('Task added — fill in the details below');},80);}
+function removeWbTask(ref,area,i){var wf=getWelfare(getRef(ref));wf.tasks[area].splice(i,1);render();}
+function wbTaskField(ref,area,i,f,v){var wf=getWelfare(getRef(ref));wf.tasks[area][i][f]=v;render();}
+function addNote(ref){
+  var cat=(document.getElementById('ni-cat')||{}).value||'General';
+  var dur=(document.getElementById('ni-dur')||{}).value||'';
+  var author=(document.getElementById('ni-author')||{}).value||'—';
+  var text=((document.getElementById('ni-text')||{}).value||'').trim();
+  var dateIn=(document.getElementById('ni-date')||{}).value||new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var timeIn=(document.getElementById('ni-time')||{}).value||new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  if(!text){toast('Please write a note first');return;}
+  var dateLabel=dateIn+' '+timeIn;
+  // Sort key: try to parse dd/mm/yyyy hh:mm
+  var parts=dateIn.split('/');var sortKey=parts.length===3?(parts[2]+'-'+parts[1]+'-'+parts[0]+' '+timeIn):(Date.now()+'');
+  DATA.notes=DATA.notes||[];
+  DATA.notes.push({noteId:'N-'+Date.now(),ref:ref,date:dateLabel,sortKey:sortKey,author:author,category:cat,duration:dur,text:text});
+  DATA.notes.sort(function(a,b){return(b.sortKey||b.date).localeCompare(a.sortKey||a.date);});
+  if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Note saved');}).addWellbeingNote(ref,author,cat,dur,text);else toast('Note added (demo)');
+  render();window.scrollTo(0,0);
+}
+function completeActionUI(id){var a=(DATA.actions||[]).find(function(x){return x.actionId===id;});if(a)a.status='done';if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Action done');}).completeAction(id);else toast('Action marked done (demo)');render();}
+function saveWb(ref){var wf=getWelfare(getRef(ref));var json=JSON.stringify(wf);getRef(ref).welfareJson=json;if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Wellbeing assessment saved');}).saveWelfare(ref,json,'','','');else toast('Wellbeing assessment saved (demo)');toast('Saved');}
+
+/* ══════════════════════════════════════════════════════
+   PLACEHOLDER VIEWS
+══════════════════════════════════════════════════════ */
+function renderPlaceholder(title,iconKey,desc){return'<div class="eyebrow">Operations Suite</div><h1>'+title+'</h1><p style="color:var(--muted);margin-bottom:22px">'+desc+'</p><div class="card placeholder"><div class="pic">'+ic(iconKey,32)+'</div><b>'+title+' — coming soon</b><p style="margin-top:8px;max-width:440px;margin-left:auto;margin-right:auto">This section is scaffolded for the developer to build out.</p></div>';}
+
+/* ══════════════════════════════════════════════════════
+   ROUTER + BOOT
+══════════════════════════════════════════════════════ */</script>
