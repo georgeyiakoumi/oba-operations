@@ -217,19 +217,17 @@ function renderDashActions(refs,todayStr){
 
     /* Count indicators for this day */
     var dayApptCount=refs.filter(function(r){return r.apptDate&&r.apptDate===dStr;}).length;
+    var dayCollCount=(DATA.collections||[]).filter(function(c){return c.date===dStr;}).length;
     var dayActionCount=(DATA.actions||[]).filter(function(a){return a.status!=='done'&&a.dueBy&&a.dueBy===dStr;}).length;
-    var dayNewCount=refs.filter(function(r){
-      if(!r.receivedDate)return false;
-      return r.receivedDate===dayLabel||r.receivedDate===d.getDate()+' '+MONTHS[d.getMonth()];
-    }).length;
 
     var cls='day-pill'+(isSelected?' selected':'')+(isToday?' today-pill':'');
     h+='<div class="'+cls+'" onclick="STATE.selectedDay=\''+dStr+'\';render()">';
     h+='<div class="dp-name">'+(isToday?'Today':dayNames[i])+'</div>';
     h+='<div class="dp-date">'+dayLabel+'</div>';
     h+='<div class="dp-indicators">';
+    if(dayCollCount)h+='<span class="dp-ind" style="color:var(--green)">'+ic('package',11)+dayCollCount+'</span>';
+    if(dayApptCount)h+='<span class="dp-ind dp-ind-new">'+ic('calendar',11)+dayApptCount+'</span>';
     if(dayActionCount)h+='<span class="dp-ind dp-ind-action">'+ic('alert-circle',11)+dayActionCount+'</span>';
-    if(dayNewCount)h+='<span class="dp-ind dp-ind-new">'+ic('inbox',11)+dayNewCount+'</span>';
     h+='</div>';
     h+='</div>';
   }
@@ -262,6 +260,30 @@ function renderDashActions(refs,todayStr){
     h+='</tbody></table>';
   }
   h+='</div>';
+
+  /* Collections for selected day */
+  var selColls=(DATA.collections||[]).filter(function(c){return c.date===STATE.selectedDay;});
+  selColls.sort(function(a,b){return(a.time||'').localeCompare(b.time||'');});
+  if(selColls.length){
+    h+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">';
+    h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">';
+    h+='<h2 style="margin:0;display:flex;align-items:center;gap:8px">'+ic('package',16)+'Collections <span class="nav-badge">'+selColls.length+'</span></h2>';
+    h+='</div>';
+    selColls.forEach(function(c){
+      var r=getRef(c.ref);if(!r)return;
+      var rowCls='coll-row'+(c.status?' status-'+c.status:'');
+      h+='<div class="'+rowCls+'">';
+      h+='<span class="coll-time">'+esc(c.time)+'</span>';
+      h+='<span class="coll-name" onclick="event.stopPropagation();openBeneFile(\''+c.ref+'\')">'+esc(r.name)+'</span>';
+      h+='<span class="coll-meta">'+esc(r.borough)+' · '+esc(r.distributionGroup||'')+'</span>';
+      h+='<div class="coll-btns">';
+      h+='<button class="coll-btn'+(c.status==='collected'?' coll-btn-collected':'')+'" onclick="markCollection(\''+c.ref+'\',\'collected\')">'+ic('check',13)+' Collected</button>';
+      h+='<button class="coll-btn'+(c.status==='dna'?' coll-btn-dna':'')+'" onclick="markCollection(\''+c.ref+'\',\'dna\')">'+ic('x',13)+' Did not attend</button>';
+      h+='</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
 
   /* Outstanding actions — full width, with sort + volunteer filter */
   var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});

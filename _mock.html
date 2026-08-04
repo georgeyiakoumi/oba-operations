@@ -63,6 +63,14 @@ var MOCK={
     {ref:'REF-0259',name:'Steven Smith',borough:'Lambeth',type:'STANDARD',receivedDate:'10 May',adults:'3',children:'1',ages:'10M',email:'steven.s@email.com',phone:'07700 900259',status:'Active Beneficiary',flags:'',circumstances:'Fled temporary accommodation with very little.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0260',name:'Steven Young',borough:'Lambeth',type:'STANDARD',receivedDate:'15 May',adults:'1',children:'3',ages:'11M,4M,8F',email:'steven.y@email.com',phone:'07700 900260',status:'Registration Complete - No follow up required',flags:'',circumstances:'Single parent, recently signed off work sick.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''}
   ],
+  collections:(function(){var tom=new Date();tom.setDate(tom.getDate()+1);var tomStr=tom.toISOString().slice(0,10);return[
+    {ref:'REF-0201',date:relToday(),time:'16:00',status:''},
+    {ref:'REF-0204',date:relToday(),time:'16:30',status:''},
+    {ref:'REF-0210',date:relToday(),time:'17:00',status:''},
+    {ref:'REF-0211',date:tomStr,time:'09:00',status:''},
+    {ref:'REF-0212',date:tomStr,time:'09:30',status:''},
+    {ref:'REF-0217',date:tomStr,time:'10:00',status:''}
+  ];})(),
   notes:[
     {noteId:'N-1',ref:'REF-0206',date:relDate(-9),author:'Sophie',category:'Safeguarding',duration:'25',text:'Initial disclosure of domestic violence during registration. Did not record perpetrator details per data-privacy rule. Agreed a safety plan and shared Refuge + National DV Helpline numbers. Escalated to senior staff same day.'},
     {noteId:'N-2',ref:'REF-0206',date:relDate(-4),author:'Sophie',category:'Benefits',duration:'15',text:'Reviewed UC journal. Household likely missing the disability element — referred to Income Max CIC for a full benefits check. Beneficiary informed and consented.'},
@@ -254,6 +262,12 @@ function renderBreadcrumb(links,current){
   });
   h+='<span class="current">'+esc(current)+'</span></nav>';
   return h;
+}
+function markCollection(ref,status){
+  var cols=DATA.collections||[];
+  for(var i=0;i<cols.length;i++){if(cols[i].ref===ref){cols[i].status=status;break;}}
+  toast(status==='collected'?'Marked as collected':'Marked as did not attend');
+  render();
 }
 function deepSet(o,path,v){var p=path.split('.'),c=o;for(var i=0;i<p.length-1;i++){if(!c[p[i]])c[p[i]]={};c=c[p[i]];}c[p[p.length-1]]=v;}
 function parseChildAges(agesStr){

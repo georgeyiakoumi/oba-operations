@@ -1345,6 +1345,25 @@ select.filter-sel {
 .threshold-card .th-inputs input:focus { outline: none; border-color: var(--green); background: var(--card) }
 .threshold-card .th-footer { font-size: 13px; color: var(--muted); margin-top: 12px }
 
+/* Collection appointment rows */
+.coll-row { display: flex; align-items: center; gap: 14px; padding: 12px 18px; border-top: 1px solid var(--line-soft) }
+.coll-row:first-child { border-top: 0 }
+.coll-row .coll-time { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--green-deep); width: 50px; flex-shrink: 0 }
+.coll-row .coll-name { font-weight: 500; font-size: 14px; flex: 1; cursor: pointer }
+.coll-row .coll-name:hover { color: var(--green); text-decoration: underline }
+.coll-row .coll-meta { font-size: 12px; color: var(--muted); margin-right: auto }
+.coll-row .coll-btns { display: flex; gap: 6px; flex-shrink: 0 }
+.coll-btn { padding: 6px 12px; border-radius: 7px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); background: var(--card); cursor: pointer }
+.coll-btn:hover { border-color: var(--green) }
+.coll-btn-collected { border-color: var(--green); color: var(--green-deep); background: var(--green-chip-bg) }
+.coll-btn-dna { border-color: var(--red); color: var(--red); background: var(--red-bg) }
+.coll-row.status-collected { background: var(--green-chip-bg) }
+.coll-row.status-collected .coll-btns .coll-btn { opacity: .4; pointer-events: none }
+.coll-row.status-collected .coll-btns .coll-btn-collected { opacity: 1; pointer-events: auto }
+.coll-row.status-dna { background: var(--red-bg) }
+.coll-row.status-dna .coll-btns .coll-btn { opacity: .4; pointer-events: none }
+.coll-row.status-dna .coll-btns .coll-btn-dna { opacity: 1; pointer-events: auto }
+
 /* ── BOROUGH BREAKDOWN ── */
 
 .bor-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px }
