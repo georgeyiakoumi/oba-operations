@@ -49,7 +49,7 @@ function renderSidebar(){
   h+=subBtn('wbTodo','To-do / Notes',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===2);
   h+='</div>';
 
-  h+='<div class="side-foot"><span>OBA Ops v1.0</span>'+(DATA.sheetUrl?'<a href="'+DATA.sheetUrl+'" target="_blank" rel="noopener">sheet ↗</a>':'')+'</div>';
+  h+='<div class="side-foot"><span>OBA Ops v2.0</span>'+(DATA.sheetUrl?'<a href="'+DATA.sheetUrl+'" target="_blank" rel="noopener">sheet ↗</a>':'')+'</div>';
   document.getElementById('sidebar').innerHTML=h;
 }
 function sideBtn(key,lbl,iconName,badge,active){
