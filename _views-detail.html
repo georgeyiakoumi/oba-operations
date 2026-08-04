@@ -72,20 +72,6 @@ function renderDetail(){
     h+='</div>';
   }
   h+='</div>'; /* close header card */
-  /* progress bar */
-  h+='<div class="step-progress">';
-  DETAIL_STEPS.forEach(function(lbl,i){
-    var n=i+1;
-    var isDone=n<STATE.step;
-    var isActive=n===STATE.step;
-    var cls=isDone?'done':isActive?'active':'';
-    h+='<div class="sp-step '+cls+'">';
-    h+='<div class="sp-dot '+cls+'">'+(isDone?ic('check',12):n)+'</div>';
-    h+='<span class="sp-label">'+lbl+'</span>';
-    h+='</div>';
-    if(i<DETAIL_STEPS.length-1)h+='<div class="sp-line'+(isDone?' done':'')+'"></div>';
-  });
-  h+='</div>';
   /* tabs + content in one card */
   h+='<div class="card" style="padding:0;overflow:hidden">';
   h+='<div class="detail-tabs">';
