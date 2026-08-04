@@ -12,7 +12,7 @@ function renderDetail(){
   h+='<div class="card detail-head"><div class="head-row"><div>';
   h+='<div class="dh-eyebrow">'+esc(r.ref)+'</div>';
   h+='<div class="dh-name">'+esc(r.name)+'</div>';
-  h+='<div class="dh-meta">'+esc(r.borough)+' · '+hhWords(r)+' · Referred on '+fmtDate(r.receivedDate)+'</div>';
+  h+='<div class="dh-meta">'+detailTagline(r)+'</div>';
   /* flags — active ones as badges, + Add tags dropdown at the end */
   h+='<div class="dh-flags" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:10px">';
   /* render active flag badges */
@@ -50,6 +50,20 @@ function renderDetail(){
   h+='</div>';
   h+='<div class="dh-actions"><button class="dh-btn">'+ic('mail',15)+'Send Email</button><button class="dh-btn">'+ic('phone',15)+'Call</button><button class="dh-btn">'+ic('sms',15)+'SMS</button></div>';
   h+='</div>'; /* close header card */
+  /* progress bar */
+  h+='<div class="step-progress">';
+  DETAIL_STEPS.forEach(function(lbl,i){
+    var n=i+1;
+    var isDone=n<STATE.step;
+    var isActive=n===STATE.step;
+    var cls=isDone?'done':isActive?'active':'';
+    h+='<div class="sp-step '+cls+'">';
+    h+='<div class="sp-dot '+cls+'">'+(isDone?ic('check',12):n)+'</div>';
+    h+='<span class="sp-label">'+lbl+'</span>';
+    h+='</div>';
+    if(i<DETAIL_STEPS.length-1)h+='<div class="sp-line'+(isDone?' done':'')+'"></div>';
+  });
+  h+='</div>';
   /* tabs + content in one card */
   h+='<div class="card" style="padding:0;overflow:hidden">';
   h+='<div class="detail-tabs">';
@@ -116,15 +130,24 @@ function renderStepReferralInfo(r){
     return (h.household||'').toLowerCase().indexOf(rSurname)>=0;
   });
   var prevRefs=matches.concat(hist);
-  var h='<div class="card" style="padding:22px 26px">';
-  h+='<div class="wsec-title">Referral Information</div>';
-  /* referral form data */
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px">';
-  var fields=[['Name',r.name],['Borough',r.borough],['Adults',r.adults],['Children',r.children+' ('+r.ages+')'],['Phone',r.phone],['Email',r.email],['Type',r.type],['Received',r.receivedDate]];
-  fields.forEach(function(f){h+='<div><div class="mini-label">'+f[0]+'</div><div style="font-size:15px;font-weight:500">'+esc(f[1]||'—')+'</div></div>';});
+  var h='';
+  /* DataList card grid */
+  function dlCard(title,rows){
+    var c='<div class="datalist-card"><div class="dl-title">'+title+'</div>';
+    rows.forEach(function(row){c+='<div class="dl-row"><span class="dl-label">'+row[0]+'</span><span class="dl-value">'+esc(row[1]||'—')+'</span></div>';});
+    return c+'</div>';
+  }
+  h+='<div class="datalist-grid">';
+  h+=dlCard('Contact',[['Phone',r.phone],['Email',r.email],['Borough',r.borough]]);
+  h+=dlCard('Household',[['Adults',r.adults],['Children',r.children],['Ages',r.ages||'—'],['Household',hh(r)]]);
+  h+=dlCard('Referral',[['Type',r.type],['Received',fmtDate(r.receivedDate)],['Status',r.status],['Support',monthsOpen(r)]]);
+  h+=dlCard('Distribution',[['Group',r.distributionGroup||'—'],['Type',r.distributionType||'—'],['WB Officer',r.wbOfficer||'—']]);
   h+='</div>';
+  /* Circumstances */
+  h+='<div class="card" style="padding:18px 22px;margin-bottom:18px">';
   h+='<div class="mini-label">Reason for referral / circumstances</div>';
-  h+='<div style="background:#f9f8f2;border-radius:9px;padding:14px;font-size:14.5px;line-height:1.55;margin-bottom:18px">'+esc(r.circumstances||'Not provided')+'</div>';
+  h+='<div style="font-size:14.5px;line-height:1.55;margin-top:6px">'+esc(r.circumstances||'Not provided')+'</div>';
+  h+='</div>';
   /* household lookup */
   h+='<div class="divider"></div>';
   h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+ic('search',18)+'<div style="font-weight:600;font-size:15.5px">Household Lookup</div>';

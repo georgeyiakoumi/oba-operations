@@ -656,6 +656,27 @@ select.filter-sel {
 
 /* ── DETAIL TABS (STEPPER) ── */
 
+/* DataList cards (detail page info sections) */
+.datalist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px }
+.datalist-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px }
+.datalist-card .dl-title { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin-bottom: 12px }
+.datalist-card .dl-row { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line-soft); font-size: 14px }
+.datalist-card .dl-row:first-of-type { border-top: 0 }
+.datalist-card .dl-label { color: var(--muted); font-size: 13px }
+.datalist-card .dl-value { font-weight: 500; text-align: right }
+
+/* Step progress bar */
+.step-progress { display: flex; align-items: center; gap: 0; margin-bottom: 20px; padding: 0 26px }
+.step-progress .sp-step { display: flex; align-items: center; flex: 1 }
+.step-progress .sp-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; border: 2px solid var(--line); background: var(--card); color: var(--muted) }
+.step-progress .sp-dot.active { border-color: var(--plum); background: var(--plum); color: #fff }
+.step-progress .sp-dot.done { border-color: var(--green); background: var(--green); color: #fff }
+.step-progress .sp-line { flex: 1; height: 2px; background: var(--line) }
+.step-progress .sp-line.done { background: var(--green) }
+.step-progress .sp-label { font-size: 11px; color: var(--muted); margin-left: 6px; white-space: nowrap }
+.step-progress .sp-step.active .sp-label { color: var(--plum); font-weight: 600 }
+.step-progress .sp-step.done .sp-label { color: var(--green-deep) }
+
 .detail-tabs { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto; background: #fafaf7 }
 
 .detail-tab {

@@ -205,6 +205,24 @@ function isRegAppt(r){return REG_APPOINTMENT_STATUSES.indexOf(r.status)>=0;}
 function isWaitingList(r){return WAITING_LIST_STATUSES.indexOf(r.status)>=0;}
 function isBeneficiary(r){return BENEFICIARY_STATUSES.indexOf(r.status)>=0;}
 function isClosed(r){return CLOSED_STATUSES.indexOf(r.status)>=0;}
+/* Tagline for detail page header */
+function detailTagline(r){
+  var parts=[esc(r.borough),hhWords(r)];
+  if(r.openFrom&&r.openTo){
+    parts.push('supporting '+esc(r.openFrom)+' – '+esc(r.openTo));
+    /* calc months remaining */
+    var now=new Date();
+    var monthMap={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    var m=r.openTo.match(/^([A-Za-z]{3})\s+(\d{4})$/);
+    if(m){
+      var endMonth=monthMap[m[1]],endYear=+m[2];
+      var diff=(endYear-now.getFullYear())*12+(endMonth-now.getMonth());
+      if(diff>0)parts.push(diff+' month'+(diff>1?'s':'')+' remaining');
+      else if(diff===0)parts.push('final month');
+    }
+  }
+  return parts.join(' · ');
+}
 /* Breadcrumb: renderBreadcrumb([['Label','view'],['Label','view'],...], 'Current Page') */
 function renderBreadcrumb(links,current){
   var h='<nav class="breadcrumb">';
