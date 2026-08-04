@@ -73,44 +73,191 @@ function sideNav(key){
 function go(view,ref){STATE.view=view;if(ref)STATE.ref=ref;if(view==='detail'){STATE.step=1;STATE.wtab=1;}render();window.scrollTo(0,0);}
 
 /* ══════════════════════════════════════════════════════
-   TODAY  (Lovable-style: hero stats + stage track + tasks)
+   DASHBOARD  (tabbed: Overview | Actions)
 ══════════════════════════════════════════════════════ */
-function renderToday(){
+function renderToday(){return renderDashboard();}
+function renderOverview(){return renderDashboard();}
+
+function renderDashboard(){
   var refs=DATA.referrals||[];
   var today=new Date();
   var todayStr=today.toISOString().slice(0,10);
+
+  var h='<div class="eyebrow">'+today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
+  h+='<h1 style="margin-bottom:4px">Dashboard</h1>';
+
+  /* Tabs */
+  h+='<div class="dash-tabs">';
+  h+='<button class="dash-tab'+(STATE.dashTab===0?' on':'')+'" onclick="STATE.dashTab=0;render()">'+ic('star',15)+'Overview</button>';
+  h+='<button class="dash-tab'+(STATE.dashTab===1?' on':'')+'" onclick="STATE.dashTab=1;render()">'+ic('cal',15)+'Actions</button>';
+  h+='</div>';
+
+  if(STATE.dashTab===0) h+=renderDashOverview(refs,todayStr);
+  else h+=renderDashActions(refs,todayStr);
+  return h;
+}
+
+/* ── Overview tab ── */
+function renderDashOverview(refs,todayStr){
+  var h='';
   var actions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
   var overdue=actions.filter(function(a){return a.dueBy&&a.dueBy<todayStr;});
-  function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
-  var stageConfig=[
-    {pipe:'New',label:'New',color:'#8aa53f'},
-    {pipe:'Appointment',label:'Appointment',color:'#d4a94a'},
-    {pipe:'Registration',label:'Registration',color:'#c06e14'},
-    {pipe:'Complete',label:'Beneficiaries',color:'#557a16'}
-  ];
-  var h='<div class="eyebrow">'+today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
-  h+='<h1 style="margin-bottom:16px">Today</h1>';
+
+  /* Overdue alert */
   if(overdue.length){
-    h+='<div class="alert-banner" style="margin-bottom:20px"><div class="ah">'+ic('warn',16)+overdue.length+' overdue task'+(overdue.length>1?'s':'')+' need attention</div>';
+    h+='<div class="alert-banner"><div class="ah">'+ic('warn',16)+overdue.length+' overdue task'+(overdue.length>1?'s':'')+' need attention</div>';
     overdue.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+' <span style="color:var(--red);font-size:11.5px">Due '+esc(a.dueBy)+'</span></div>';});
     h+='</div>';
   }
-  h+='<div class="stage-track" style="margin-bottom:20px">';
-  stageConfig.forEach(function(s){h+='<div class="stage-box"><div class="stage-bar" style="background:'+s.color+'"></div><div class="sn">'+pcount(s.pipe)+'</div><div class="sl">'+s.label+'</div></div>';});
+
+  /* Pipeline cards */
+  function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
+  var pipe=[
+    ['New','Awaiting Triage','pt-green'],
+    ['Reg. Appointments','In Progress','pt-orange'],
+    ['Waiting List','Waiting List','pt-dark'],
+    ['Active','Beneficiaries','pt-green'],
+    ['Waiting for Delivery','Delivery Wait','pt-plum'],
+    ['Closed','Closed','pt-red']
+  ];
+  h+='<div class="pipeline" style="grid-template-columns:repeat('+pipe.length+',1fr)">';
+  pipe.forEach(function(p){h+='<div class="pcard '+p[2]+'"><div class="num">'+pcount(p[0])+'</div><div class="lab">'+p[1]+'</div></div>';});
   h+='</div>';
-  h+='<div style="margin-bottom:24px" class="bor-compact">'+boroughBreakdown()+'</div>';
+
+  /* Borough breakdown */
+  h+='<div style="margin-bottom:22px">'+boroughBreakdown()+'</div>';
+
+  /* Cases due to close this month */
+  var thisMonth=MONTHS[new Date().getMonth()];
+  var thisYear=new Date().getFullYear();
+  var closing=refs.filter(function(r){
+    if(!r.openTo)return false;
+    return r.openTo.indexOf(thisMonth)===0&&r.openTo.indexOf(thisYear+'')>0&&BENEFICIARY_STATUSES.indexOf(r.status)>=0;
+  });
+  if(closing.length){
+    h+='<div class="closing-card"><div class="cc-head">'+ic('clock',16)+closing.length+' case'+(closing.length>1?'s':'')+' due to close this month ('+thisMonth+' '+thisYear+')</div>';
+    closing.forEach(function(r){
+      h+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px;cursor:pointer" onclick="go(\'detail\',\''+r.ref+'\')">';
+      h+='<span class="r-ref">'+esc(r.ref)+'</span>';
+      h+='<span style="font-weight:500;flex:1">'+esc(r.name)+'</span>';
+      h+='<span class="r-muted">'+esc(r.borough)+'</span>';
+      h+='<span class="r-muted">'+esc(r.openFrom)+' – '+esc(r.openTo)+'</span>';
+      h+=renderFlags(r,{showFinal:true});
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+
+  /* Quick links */
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">';
+  h+='<button class="btn btn-ghost" onclick="go(\'allReferrals\')">'+ic('list',15)+'All Referrals</button>';
+  h+='<button class="btn btn-ghost" onclick="go(\'newReferrals\')">'+ic('new_ref',15)+'Awaiting Triage</button>';
+  h+='<button class="btn btn-ghost" onclick="go(\'registrations\')">'+ic('cal',15)+'Registrations</button>';
+  h+='<button class="btn btn-ghost" onclick="go(\'ben\')">'+ic('ben',15)+'Beneficiaries</button>';
+  h+='</div>';
+  return h;
+}
+
+/* ── Actions tab (week picker + day columns) ── */
+function renderDashActions(refs,todayStr){
+  var h='';
+
+  /* Calculate week start (Monday) based on offset */
+  var now=new Date();
+  var dayOfWeek=now.getDay(); /* 0=Sun..6=Sat */
+  var mondayOffset=dayOfWeek===0?-6:1-dayOfWeek;
+  var weekStart=new Date(now);
+  weekStart.setDate(now.getDate()+mondayOffset+(STATE.weekOffset*7));
+
+  /* Week label */
+  var weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
+  var fmt=function(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});};
+  var weekLabel=fmt(weekStart)+' – '+fmt(weekEnd);
+  var isThisWeek=STATE.weekOffset===0;
+
+  /* Week picker nav */
+  h+='<div class="week-picker">';
+  h+='<button class="wp-nav" onclick="STATE.weekOffset--;render()">'+ic('back',16)+'</button>';
+  h+='<span class="wp-label">'+weekLabel+'</span>';
+  h+='<button class="wp-nav" onclick="STATE.weekOffset++;render()">'+ic('arrow',16)+'</button>';
+  if(!isThisWeek)h+='<button class="wp-today" onclick="STATE.weekOffset=0;render()">This week</button>';
+  h+='</div>';
+
+  /* Day columns (Mon-Sun) */
+  var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  h+='<div class="day-cols">';
+  for(var i=0;i<7;i++){
+    var d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    var dStr=d.toISOString().slice(0,10);
+    var isToday=dStr===todayStr;
+    var dayAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===dStr;});
+    dayAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
+
+    /* New referrals received on this day */
+    var dayLabel=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+    var dayNewRefs=refs.filter(function(r){
+      if(!r.receivedDate)return false;
+      var rd=r.receivedDate;
+      /* Match "dd Mon" format */
+      return rd===dayLabel||rd===d.getDate()+' '+MONTHS[d.getMonth()];
+    });
+
+    h+='<div class="day-col'+(isToday?' today-col':'')+'">';
+    h+='<div class="dc-head">'+dayNames[i]+'</div>';
+    h+='<div class="dc-date">'+d.getDate()+'</div>';
+
+    if(dayAppts.length){
+      dayAppts.forEach(function(r){
+        h+='<div class="dc-item" onclick="go(\'detail\',\''+r.ref+'\')">';
+        h+='<span style="font-family:var(--font-mono);font-size:11px;color:var(--green-deep);font-weight:600">'+esc(r.apptTime||'')+'</span> ';
+        h+='<span>'+esc(r.name.split(' ')[0])+'</span>';
+        h+='</div>';
+      });
+    }
+    if(dayNewRefs.length){
+      dayNewRefs.forEach(function(r){
+        h+='<div class="dc-item" onclick="go(\'detail\',\''+r.ref+'\')" style="color:var(--green)">';
+        h+='<span style="font-family:var(--font-mono);font-size:10px;background:var(--green-chip-bg);color:var(--green-chip-tx);padding:1px 5px;border-radius:3px">NEW</span> ';
+        h+=esc(r.name.split(' ')[0]);
+        h+='</div>';
+      });
+    }
+    if(!dayAppts.length&&!dayNewRefs.length){
+      h+='<div class="dc-empty">No activity</div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+
+  /* Outstanding tasks */
+  var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
+  if(allActions.length){
+    h+='<h2 style="margin-bottom:14px">Outstanding Tasks</h2>';
+    allActions.sort(function(a,b){return(a.dueBy||'9').localeCompare(b.dueBy||'9');});
+    allActions.forEach(function(a){
+      var ov=a.dueBy&&a.dueBy<todayStr;
+      h+='<div class="task-card'+(ov?' overdue-card':'')+'" onclick="go(\'detail\',\''+a.ref+'\')">';
+      h+='<div class="task-ic '+(ov?'plum':'green')+'">'+ic(ov?'warn':'cal',16)+'</div>';
+      h+='<div class="task-body"><div class="task-top"><span class="task-ref">'+esc(a.ref)+'</span><span class="task-name">'+esc(a.name)+'</span>'+(ov?'<span class="overdue-tag">Overdue</span>':'')+'</div>';
+      h+='<div class="task-desc">'+esc(a.action)+'</div>';
+      h+='<div class="task-meta"><span>'+ic('clock',13)+' Due: '+esc(a.dueBy||'—')+'</span><span>Officer: '+esc(a.officer)+'</span></div></div>';
+      h+='<span style="color:var(--faint);align-self:center">'+ic('arrow')+'</span></div>';
+    });
+  }
+
+  /* Today's appointments (compact list) */
   var todayAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===todayStr;});
   todayAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
-  h+='<div class="today-apts-head"><h2>Appointments today</h2>';
-  if(todayAppts.length)h+='<button class="btn btn-ghost" onclick="window.print()" style="font-size:13px;padding:7px 13px">'+ic('print',14)+' Print list</button>';
+  h+='<div class="today-apts-head" style="margin-top:20px"><h2>Appointments today</h2>';
+  if(todayAppts.length)h+='<button class="btn btn-ghost" onclick="window.print()" style="font-size:13px;padding:7px 13px">'+ic('print',14)+' Print</button>';
   h+='</div>';
   if(!todayAppts.length){
-    h+='<div class="card placeholder" style="padding:18px;margin-bottom:20px">No appointments scheduled for today.</div>';
+    h+='<div class="card placeholder" style="padding:18px">No appointments scheduled for today.</div>';
   } else {
-    h+='<div class="card apt-compact-list" id="print-apts">';
+    h+='<div class="card apt-compact-list">';
     h+='<div class="apt-compact-head"><span>Time</span><span>Name</span><span>Type</span><span>Volunteer</span></div>';
     todayAppts.forEach(function(r){
-      var aptType=r.apptType==='online'?'Online registration':isComplex(r)?'WB Follow-up':'New registration';
+      var aptType=r.apptType==='online'?'Online':isComplex(r)?'WB Follow-up':'Registration';
       h+='<div class="apt-compact-row" onclick="go(\'detail\',\''+r.ref+'\')">';
       h+='<span class="ac-time">'+esc(r.apptTime||'—')+'</span>';
       h+='<span class="ac-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+'</span>';
@@ -120,43 +267,6 @@ function renderToday(){
     });
     h+='</div>';
   }
-  h+='<h2 style="margin:20px 0 10px">Collections today</h2>';
-  h+='<div class="card placeholder" style="padding:18px"><p style="color:var(--muted);font-size:13.5px">Collections scheduling not yet wired up. Developer: connect to Pick Plan / delivery system.</p></div>';
-  return h;
-}
-
-/* ══════════════════════════════════════════════════════
-   OVERVIEW
-══════════════════════════════════════════════════════ */
-function renderOverview(){
-  var refs=DATA.referrals||[];
-  var urgent=(DATA.actions||[]).filter(function(a){return a.status!=='done'&&a.priority==='urgent';});
-  function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
-  var pipe=[['New','New Referrals','pt-green'],['Appointment','Appointment','pt-orange'],['Registration','Registration','pt-dark'],['Complete','Beneficiaries','pt-dark']];
-  var h='<div class="eyebrow">Referral Management</div><h1>Pipeline Overview</h1>';
-  h+='<p style="color:var(--muted);margin-bottom:24px">Live pipeline across every stage.</p>';
-  if(urgent.length){h+='<div class="alert-banner"><div class="ah">'+ic('warn',16)+urgent.length+' urgent task'+(urgent.length>1?'s':'')+' outstanding</div>';urgent.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+'</div>';});h+='</div>';}
-  h+='<div class="pipeline">';
-  pipe.forEach(function(p){h+='<div class="pcard '+p[2]+'"><div class="num">'+pcount(p[0])+'</div><div class="lab">'+p[1]+'</div></div>';});
-  h+='</div>';
-  h+='<div style="margin-bottom:22px">'+boroughBreakdown()+'</div>';
-  // ── Outstanding tasks (moved from Today) ──
-  var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
-  if(allActions.length){
-    var filters=['All','Validation','Appointment','Wellbeing','Registration','Follow-up'];
-    h+='<div class="head-row" style="margin-bottom:14px"><h2>Outstanding Tasks</h2><div style="display:flex;gap:7px;flex-wrap:wrap">';
-    filters.forEach(function(f){h+='<button class="fchip'+(STATE.taskFilter===f?' on':'')+'" onclick="STATE.taskFilter=\''+f+'\';render()">'+f+'</button>';});
-    h+='</div></div>';
-    var todayStr=new Date().toISOString().slice(0,10);
-    allActions.sort(function(a,b){return(a.dueBy||'9').localeCompare(b.dueBy||'9');});
-    allActions.forEach(function(a){
-      var ov=a.dueBy&&a.dueBy<todayStr;
-      h+='<div class="task-card'+(ov?' overdue-card':'')+'" onclick="go(\'detail\',\''+a.ref+'\')" ><div class="task-ic '+(ov?'plum':'green')+'">'+ic(ov?'warn':'cal',16)+'</div><div class="task-body"><div class="task-top"><span class="task-ref">'+esc(a.ref)+'</span><span class="task-name">'+esc(a.name)+'</span>'+(ov?'<span class="overdue-tag">Overdue</span>':'')+'</div><div class="task-desc">'+esc(a.action)+'</div><div class="task-meta"><span>'+ic('clock',13)+' Due: '+esc(a.dueBy||'—')+'</span><span>Officer: '+esc(a.officer)+'</span></div></div><span style="color:var(--faint);align-self:center">'+ic('arrow')+'</span></div>';
-    });
-  } else {
-    h+='<div class="card placeholder" style="padding:18px">No outstanding tasks.</div>';
-  }
-  h+='<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" onclick="go(\'allReferrals\')">'+ic('list',15)+'All Referrals</button><button class="btn btn-ghost" onclick="go(\'newReferrals\')">'+ic('new_ref',15)+'New Referrals</button><button class="btn btn-ghost" onclick="go(\'registrations\')">'+ic('cal',15)+'Registrations</button><button class="btn btn-ghost" onclick="go(\'ben\')">'+ic('ben',15)+'Beneficiaries</button></div>';
   return h;
 }
 

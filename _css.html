@@ -551,6 +551,35 @@ select.filter-sel {
 .stage-box .sl { font-size: 12px; color: var(--muted); margin-top: 4px }
 .stage-bar { height: 4px; border-radius: 2px; margin-bottom: 10px }
 
+/* Dashboard tabs */
+.dash-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--line); margin-bottom: 24px }
+.dash-tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 13px 22px; font-size: 15px; font-weight: 500; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: -2px; white-space: nowrap }
+.dash-tab:hover { color: var(--ink) }
+.dash-tab.on { color: var(--green-deep); border-bottom-color: var(--green); font-weight: 600 }
+
+/* Week picker */
+.week-picker { display: flex; align-items: center; gap: 10px; margin-bottom: 20px }
+.week-picker .wp-label { font-family: var(--font-heading); font-weight: 600; font-size: 17px; color: var(--green-deep) }
+.week-picker .wp-nav { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; color: var(--muted) }
+.week-picker .wp-nav:hover { border-color: var(--green); color: var(--green-deep) }
+.week-picker .wp-today { background: var(--green-chip-bg); border: 1px solid var(--green); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--green-deep); cursor: pointer }
+
+/* Day columns */
+.day-cols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 24px }
+.day-col { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px; min-height: 120px; box-shadow: var(--shadow) }
+.day-col.today-col { border-color: var(--green); border-width: 2px }
+.day-col .dc-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px }
+.day-col .dc-date { font-family: var(--font-heading); font-weight: 700; font-size: 20px; color: var(--ink); margin-bottom: 10px }
+.day-col.today-col .dc-date { color: var(--green-deep) }
+.day-col .dc-item { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--line-soft); cursor: pointer }
+.day-col .dc-item:first-child { border-top: 0 }
+.day-col .dc-item:hover { color: var(--green) }
+.day-col .dc-empty { font-size: 12px; color: var(--faint); font-style: italic }
+
+/* Closing summary */
+.closing-card { background: var(--orange-bg); border: 1px solid #e8d5b5; border-radius: var(--radius); padding: 18px 22px; margin-bottom: 20px }
+.closing-card .cc-head { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--orange); margin-bottom: 8px }
+
 
 /* ── ALERT BANNER ── */
 
