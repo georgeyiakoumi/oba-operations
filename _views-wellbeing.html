@@ -368,16 +368,25 @@ function renderWbFile(r){
   var wf=getWelfare(r);var openTasks=0,doneTasks=0;
   Object.keys(wf.tasks||{}).forEach(function(area){(wf.tasks[area]||[]).forEach(function(tk){if(tk.status==='Completed')doneTasks++;else openTasks++;});});
   var h=renderBreadcrumb([['Wellbeing','wellbeing'],['All Cases','wellbeing']],r.name);
-  /* summary card on top */
-  h+='<div class="card wb-summary"><div class="wb-sum-name">'+esc(r.name.toUpperCase())+'</div>';
-  h+='<div class="wb-sum-meta">';
-  h+='<div><span class="lab">Household</span><span class="val">'+hhWords(r)+'</span></div>';
-  h+='<div><span class="lab">Borough</span><span class="val">'+esc(r.borough)+'</span></div>';
-  h+='<div><span class="lab">Support open</span><span class="val">'+esc(monthsOpen(r))+'</span></div>';
-  h+='<div><span class="lab">Flags</span><span class="val" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+(renderFlags(r,{showEmerg:true,showFinal:true})||'<span style="color:var(--muted)">None</span>')+'</span></div>';
-  h+='<div><span class="lab">Wellbeing officer</span><span class="val">'+esc(r.wbOfficer||'Unassigned')+'</span></div>';
-  h+='<div><span class="lab">Status</span><span class="val">'+statusPill(r)+'</span></div>';
-  h+='</div></div>';
+  /* summary header */
+  h+='<div class="card detail-head">';
+  h+='<div class="dh-eyebrow">'+esc(r.ref)+' · Wellbeing</div>';
+  h+='<div class="dh-name">'+esc(r.name)+'</div>';
+  h+='<div class="dh-meta">'+detailTagline(r)+'</div>';
+  var ftags=renderFlags(r,{showEmerg:true,showFinal:true});
+  if(ftags)h+='<div class="dh-flags" style="margin-top:8px">'+ftags+'</div>';
+  h+='</div>';
+  /* summary DataList cards */
+  function dlCard(title,rows){
+    var c='<div class="datalist-card"><div class="dl-title">'+title+'</div>';
+    rows.forEach(function(row){c+='<div class="dl-row"><span class="dl-label">'+row[0]+'</span><span class="dl-value">'+esc(row[1]||'—')+'</span></div>';});
+    return c+'</div>';
+  }
+  h+='<div class="datalist-grid" style="margin-bottom:20px">';
+  h+=dlCard('Case Info',[['Officer',r.wbOfficer||'Unassigned'],['Status',r.status],['Support',monthsOpen(r)]]);
+  h+=dlCard('Household',[['Adults',r.adults],['Children',formatChildren(r.children,r.ages)],['Borough',r.borough]]);
+  h+=dlCard('Activity',[['Open tasks',openTasks+''],['Done tasks',doneTasks+''],['Notes',(DATA.notes||[]).filter(function(n){return n.ref===r.ref;}).length+'']]);
+  h+='</div>';
   /* tabs */
   var tabs=[['Overview','star'],['Case Notes','note'],['Tasks','task']];
   var tabBadges=[null,null,(openTasks?openTasks:null)];
