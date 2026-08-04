@@ -583,19 +583,29 @@ select.filter-sel {
 .week-picker .wp-nav:hover { border-color: var(--green); color: var(--green-deep) }
 .week-picker .wp-today { background: var(--green-chip-bg); border: 1px solid var(--green); border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--green-deep); cursor: pointer }
 
-/* Day columns */
-.day-cols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 24px }
-.day-col { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 12px; min-height: 120px; box-shadow: var(--shadow) }
-.day-col.today-col { border-color: var(--green); border-width: 2px }
-.day-col .dc-head { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px }
-.day-col .dc-date { font-family: var(--font-heading); font-weight: 700; font-size: 20px; color: var(--ink); margin-bottom: 10px }
-.day-col.today-col .dc-date { color: var(--green-deep) }
-.day-col .dc-item { font-size: 13px; padding: 6px 0; border-top: 1px solid var(--line-soft); cursor: pointer }
-.day-col .dc-item:first-child { border-top: 0 }
-.day-col .dc-item:hover { color: var(--green) }
-.day-col .dc-empty { font-size: 12px; color: var(--faint); font-style: italic }
+/* Day picker (RadioGroup-style pills) */
+.day-picker { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 24px }
+.day-pill { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 8px; text-align: center; cursor: pointer; transition: all .15s }
+.day-pill:hover { border-color: var(--green); background: var(--hover) }
+.day-pill.selected { border-color: var(--green); border-width: 2px; background: var(--green-chip-bg) }
+.day-pill .dp-name { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 2px }
+.day-pill.selected .dp-name { color: var(--green-deep) }
+.day-pill.today-pill .dp-name { color: var(--green); font-weight: 600 }
+.day-pill .dp-date { font-size: 13px; font-weight: 600; color: var(--ink) }
+.day-pill .dp-indicators { display: flex; justify-content: center; gap: 6px; margin-top: 6px; min-height: 18px }
+.day-pill .dp-ind { display: inline-flex; align-items: center; gap: 2px; font-size: 10px; font-weight: 600 }
+.dp-ind-action { color: var(--red) }
+.dp-ind-new { color: var(--bor-croydon) }
+
+/* Pipeline card with icon */
+.pcard .pc-icon { color: var(--muted); margin-bottom: 6px }
+.pcard .pc-icon svg { width: 20px; height: 20px }
 
 /* Closing summary */
+/* Two-column actions grid */
+.actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px }
+@media (max-width: 900px) { .actions-grid { grid-template-columns: 1fr } }
+
 .closing-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow) }
 .closing-card .cc-head { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); margin-bottom: 14px; font-size: 16px }
 .closing-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px }

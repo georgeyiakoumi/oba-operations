@@ -83,18 +83,41 @@ function renderDashboard(){
   var today=new Date();
   var todayStr=today.toISOString().slice(0,10);
 
-  var h='<div class="eyebrow">'+today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
-  h+='<h1 style="margin-bottom:4px">Dashboard</h1>';
+  var h='<h1 style="margin-bottom:8px">Dashboard</h1>';
 
-  /* Tabs */
-  h+='<div class="dash-tabs">';
-  h+='<button class="dash-tab'+(STATE.dashTab===0?' on':'')+'" onclick="STATE.dashTab=0;render()">'+ic('star',15)+'Overview</button>';
-  h+='<button class="dash-tab'+(STATE.dashTab===1?' on':'')+'" onclick="STATE.dashTab=1;render()">'+ic('cal',15)+'Actions</button>';
+  /* Tab bar with week nav integrated (health-bank style) */
+  h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">';
+  h+='<div class="dash-tabs" style="margin-bottom:0">';
+  h+='<button class="dash-tab'+(STATE.dashTab===0?' on':'')+'" onclick="STATE.dashTab=0;render()">Overview</button>';
+  h+='<button class="dash-tab'+(STATE.dashTab===1?' on':'')+'" onclick="STATE.dashTab=1;render()">Actions</button>';
+  h+='</div>';
+
+  /* Week nav (only visible on Actions tab) */
+  if(STATE.dashTab===1){
+    var now2=new Date();var dow=now2.getDay();var moff=dow===0?-6:1-dow;
+    var ws=new Date(now2);ws.setDate(now2.getDate()+moff+(STATE.weekOffset*7));
+    var we=new Date(ws);we.setDate(ws.getDate()+6);
+    var wfmt=function(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});};
+    h+='<div class="week-picker" style="margin-bottom:0">';
+    h+='<button class="wp-nav" onclick="STATE.weekOffset--;render()">'+ic('chevron-left',16)+'</button>';
+    h+='<span class="wp-label">'+wfmt(ws)+' – '+wfmt(we)+'</span>';
+    h+='<button class="wp-nav" onclick="STATE.weekOffset++;render()">'+ic('chevron-right',16)+'</button>';
+    if(STATE.weekOffset!==0)h+='<button class="wp-today" onclick="STATE.weekOffset=0;STATE.selectedDay=\''+todayStr+'\';render()">Today</button>';
+    h+='</div>';
+  }
   h+='</div>';
 
   if(STATE.dashTab===0) h+=renderDashOverview(refs,todayStr);
   else h+=renderDashActions(refs,todayStr);
   return h;
+}
+
+/* closingIn helper — used by both Overview and Actions */
+function closingIn(month,year){
+  return (DATA.referrals||[]).filter(function(r){
+    if(!r.openTo||BENEFICIARY_STATUSES.indexOf(r.status)<0)return false;
+    return r.openTo.indexOf(month)===0&&r.openTo.indexOf(year+'')>0;
+  });
 }
 
 /* ── Overview tab ── */
@@ -110,35 +133,35 @@ function renderDashOverview(refs,todayStr){
     h+='</div>';
   }
 
-  /* Pipeline cards */
+  /* Pipeline cards (matching health-bank PIPELINE_CONFIG) */
   function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
+  var now=new Date();
+  var dueToCloseCount=closingIn(MONTHS[now.getMonth()],now.getFullYear()).length+closingIn(MONTHS[(now.getMonth()+1)%12],(now.getMonth()+1)%12===0?now.getFullYear()+1:now.getFullYear()).length;
   var pipe=[
-    ['New','New Referrals','pt-green'],
-    ['Reg. Appointments','Reg. Appointments','pt-orange'],
-    ['Waiting List','Waiting List','pt-dark'],
-    ['Active','Beneficiaries','pt-green'],
-    ['Waiting for Delivery','Awaiting Delivery','pt-plum'],
-    ['Closed','Closed','pt-red']
+    ['New','New Referrals','pt-green','user-plus','newReferrals'],
+    ['Reg. Appointments','Reg. Appointments','pt-orange','calendar','registrations'],
+    ['Waiting List','Waiting List','pt-dark','clipboard-check','waitingList'],
+    ['Waiting for Delivery','Awaiting Delivery','pt-plum','users','']
   ];
-  h+='<div class="pipeline" style="grid-template-columns:repeat('+pipe.length+',1fr)">';
-  pipe.forEach(function(p){h+='<div class="pcard '+p[2]+'"><div class="num">'+pcount(p[0])+'</div><div class="lab">'+p[1]+'</div></div>';});
+  var pipeCols=dueToCloseCount>0?pipe.length+1:pipe.length;
+  h+='<div class="pipeline" style="grid-template-columns:repeat('+pipeCols+',1fr)">';
+  pipe.forEach(function(p){
+    var cnt=pcount(p[0]);
+    var clickAttr=p[4]?' onclick="go(\''+p[4]+'\')" style="cursor:pointer"':'';
+    h+='<div class="pcard '+p[2]+'"'+clickAttr+'><div class="pc-icon">'+ic(p[3],20)+'</div><div class="num">'+cnt+'</div><div class="lab">'+p[1]+'</div></div>';
+  });
+  if(dueToCloseCount>0){
+    h+='<div class="pcard pt-red"><div class="pc-icon">'+ic('alert-circle',20)+'</div><div class="num">'+dueToCloseCount+'</div><div class="lab">Due to Close</div></div>';
+  }
   h+='</div>';
 
   /* Borough breakdown */
   h+='<div style="margin-bottom:22px">'+boroughBreakdown()+'</div>';
 
   /* Due to close — two-column (this month + next month) grouped by borough */
-  var now=new Date();
   var thisMonth=MONTHS[now.getMonth()];var thisYear=now.getFullYear();
   var nextMonthIdx=(now.getMonth()+1)%12;var nextMonth=MONTHS[nextMonthIdx];
   var nextYear=nextMonthIdx===0?thisYear+1:thisYear;
-
-  function closingIn(month,year){
-    return refs.filter(function(r){
-      if(!r.openTo||BENEFICIARY_STATUSES.indexOf(r.status)<0)return false;
-      return r.openTo.indexOf(month)===0&&r.openTo.indexOf(year+'')>0;
-    });
-  }
   var closingThis=closingIn(thisMonth,thisYear);
   var closingNext=closingIn(nextMonth,nextYear);
 
@@ -164,143 +187,122 @@ function renderDashOverview(refs,todayStr){
     h+='</div></div>';
   }
 
-  /* Quick links */
-  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">';
-  h+='<button class="btn btn-ghost" onclick="go(\'allReferrals\')">'+ic('list',15)+'All Referrals</button>';
-  h+='<button class="btn btn-ghost" onclick="go(\'newReferrals\')">'+ic('new_ref',15)+'New Referrals</button>';
-  h+='<button class="btn btn-ghost" onclick="go(\'registrations\')">'+ic('cal',15)+'Registrations</button>';
-  h+='<button class="btn btn-ghost" onclick="go(\'ben\')">'+ic('ben',15)+'Beneficiaries</button>';
-  h+='</div>';
   return h;
 }
 
-/* ── Actions tab (week picker + day columns) ── */
+/* ── Actions tab (day picker pills + selected day content) ── */
 function renderDashActions(refs,todayStr){
   var h='';
 
-  /* Calculate week start (Monday) based on offset */
-  var now=new Date();
-  var dayOfWeek=now.getDay(); /* 0=Sun..6=Sat */
-  var mondayOffset=dayOfWeek===0?-6:1-dayOfWeek;
-  var weekStart=new Date(now);
-  weekStart.setDate(now.getDate()+mondayOffset+(STATE.weekOffset*7));
-
-  /* Week label */
-  var weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);
-  var fmt=function(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});};
-  var weekLabel=fmt(weekStart)+' – '+fmt(weekEnd);
-  var isThisWeek=STATE.weekOffset===0;
-
-  /* Week picker nav */
-  h+='<div class="week-picker">';
-  h+='<button class="wp-nav" onclick="STATE.weekOffset--;render()">'+ic('back',16)+'</button>';
-  h+='<span class="wp-label">'+weekLabel+'</span>';
-  h+='<button class="wp-nav" onclick="STATE.weekOffset++;render()">'+ic('arrow',16)+'</button>';
-  if(!isThisWeek)h+='<button class="wp-today" onclick="STATE.weekOffset=0;render()">This week</button>';
-  h+='</div>';
-
-  /* Day columns (Mon-Sun) */
+  /* Calculate week */
+  var now=new Date();var dow=now.getDay();var moff=dow===0?-6:1-dow;
+  var weekStart=new Date(now);weekStart.setDate(now.getDate()+moff+(STATE.weekOffset*7));
   var dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  h+='<div class="day-cols">';
+
+  /* Day picker pills */
+  h+='<div class="day-picker">';
   for(var i=0;i<7;i++){
     var d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
     var dStr=d.toISOString().slice(0,10);
     var isToday=dStr===todayStr;
-    var dayAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===dStr;});
-    dayAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
-
-    /* New referrals received on this day */
+    var isSelected=dStr===STATE.selectedDay;
     var dayLabel=d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-    var dayNewRefs=refs.filter(function(r){
+
+    /* Count indicators for this day */
+    var dayApptCount=refs.filter(function(r){return r.apptDate&&r.apptDate===dStr;}).length;
+    var dayActionCount=(DATA.actions||[]).filter(function(a){return a.status!=='done'&&a.dueBy&&a.dueBy===dStr;}).length;
+    var dayNewCount=refs.filter(function(r){
       if(!r.receivedDate)return false;
-      var rd=r.receivedDate;
-      /* Match "dd Mon" format */
-      return rd===dayLabel||rd===d.getDate()+' '+MONTHS[d.getMonth()];
-    });
+      return r.receivedDate===dayLabel||r.receivedDate===d.getDate()+' '+MONTHS[d.getMonth()];
+    }).length;
 
-    h+='<div class="day-col'+(isToday?' today-col':'')+'">';
-    h+='<div class="dc-head">'+dayNames[i]+'</div>';
-    h+='<div class="dc-date">'+d.getDate()+'</div>';
-
-    if(dayAppts.length){
-      dayAppts.forEach(function(r){
-        h+='<div class="dc-item" onclick="go(\'detail\',\''+r.ref+'\')">';
-        h+='<span style="font-family:var(--font-mono);font-size:11px;color:var(--green-deep);font-weight:600">'+esc(r.apptTime||'')+'</span> ';
-        h+='<span>'+esc(r.name.split(' ')[0])+'</span>';
-        h+='</div>';
-      });
-    }
-    if(dayNewRefs.length){
-      dayNewRefs.forEach(function(r){
-        h+='<div class="dc-item" onclick="go(\'detail\',\''+r.ref+'\')" style="color:var(--green)">';
-        h+='<span style="font-family:var(--font-mono);font-size:10px;background:var(--green-chip-bg);color:var(--green-chip-tx);padding:1px 5px;border-radius:3px">NEW</span> ';
-        h+=esc(r.name.split(' ')[0]);
-        h+='</div>';
-      });
-    }
-    if(!dayAppts.length&&!dayNewRefs.length){
-      h+='<div class="dc-empty">No activity</div>';
-    }
+    var cls='day-pill'+(isSelected?' selected':'')+(isToday?' today-pill':'');
+    h+='<div class="'+cls+'" onclick="STATE.selectedDay=\''+dStr+'\';render()">';
+    h+='<div class="dp-name">'+(isToday?'Today':dayNames[i])+'</div>';
+    h+='<div class="dp-date">'+dayLabel+'</div>';
+    h+='<div class="dp-indicators">';
+    if(dayActionCount)h+='<span class="dp-ind dp-ind-action">'+ic('alert-circle',11)+dayActionCount+'</span>';
+    if(dayNewCount)h+='<span class="dp-ind dp-ind-new">'+ic('inbox',11)+dayNewCount+'</span>';
+    h+='</div>';
     h+='</div>';
   }
   h+='</div>';
 
-  /* Outstanding tasks */
+  /* Appointments for selected day */
+  var selAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===STATE.selectedDay;});
+  selAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
+  var selDate=new Date(STATE.selectedDay+'T00:00:00');
+  var selLabel=selDate.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+
+  h+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">';
+  h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">';
+  h+='<h2 style="margin:0;display:flex;align-items:center;gap:8px">Appointments <span class="nav-badge">'+selAppts.length+'</span></h2>';
+  if(selAppts.length)h+='<button class="btn btn-ghost" onclick="window.print()" style="font-size:12px;padding:6px 12px">'+ic('print',13)+' Print</button>';
+  h+='</div>';
+  if(!selAppts.length){
+    h+='<div style="padding:30px;text-align:center;color:var(--muted);font-size:14px">No appointments scheduled for '+selLabel+'.</div>';
+  } else {
+    h+='<table class="rtable"><thead><tr><th>Time</th><th>Name</th><th>Type</th><th>Volunteer</th><th></th></tr></thead><tbody>';
+    selAppts.forEach(function(r){
+      var aptType=r.apptType==='online'?'Online registration':isComplex(r)?'WB Follow-up':'New registration';
+      h+='<tr onclick="go(\'detail\',\''+r.ref+'\')">';
+      h+='<td style="font-family:var(--font-mono);font-weight:600;color:var(--green-deep)">'+esc(r.apptTime||'—')+'</td>';
+      h+='<td><span class="r-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+'</span></td>';
+      h+='<td class="r-muted">'+aptType+'</td>';
+      h+='<td class="r-muted">'+esc(r.apptSlot&&r.apptSlot!=='Anyone'?r.apptSlot:'—')+'</td>';
+      h+='<td style="color:var(--faint)">'+ic('chevron-right',14)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  h+='</div>';
+
+  /* Two-column grid: Outstanding actions | New referrals */
+  h+='<div class="actions-grid">';
+
+  /* Outstanding actions */
   var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
-  if(allActions.length){
-    h+='<h2 style="margin-bottom:14px">Outstanding actions</h2>';
+  h+='<div class="card" style="padding:0;overflow:hidden">';
+  h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line)"><h2 style="margin:0;display:flex;align-items:center;gap:8px">'+ic('folder-open',16)+'Outstanding actions <span class="nav-badge">'+allActions.length+'</span></h2></div>';
+  if(!allActions.length){
+    h+='<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">No outstanding actions.</div>';
+  } else {
     allActions.sort(function(a,b){return(a.dueBy||'9').localeCompare(b.dueBy||'9');});
     allActions.forEach(function(a){
       var ov=a.dueBy&&a.dueBy<todayStr;
-      h+='<div class="task-card'+(ov?' overdue-card':'')+'" onclick="go(\'detail\',\''+a.ref+'\')">';
-      h+='<div class="task-ic '+(ov?'plum':'green')+'">'+ic(ov?'warn':'cal',16)+'</div>';
-      h+='<div class="task-body"><div class="task-top"><span class="task-ref">'+esc(a.ref)+'</span><span class="task-name">'+esc(a.name)+'</span>'+(ov?'<span class="overdue-tag">Overdue</span>':'')+'</div>';
-      h+='<div class="task-desc">'+esc(a.action)+'</div>';
-      h+='<div class="task-meta"><span>'+ic('clock',13)+' Due: '+esc(a.dueBy||'—')+'</span><span>Officer: '+esc(a.officer)+'</span></div></div>';
-      h+='<span style="color:var(--faint);align-self:center">'+ic('arrow')+'</span></div>';
-    });
-  }
-
-  /* Today's appointments (compact list) */
-  var todayAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===todayStr;});
-  todayAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
-  h+='<div class="today-apts-head" style="margin-top:20px"><h2>Appointments</h2>';
-  if(todayAppts.length)h+='<button class="btn btn-ghost" onclick="window.print()" style="font-size:13px;padding:7px 13px">'+ic('print',14)+' Print</button>';
-  h+='</div>';
-  if(!todayAppts.length){
-    h+='<div class="card placeholder" style="padding:18px">No appointments scheduled for today.</div>';
-  } else {
-    h+='<div class="card apt-compact-list">';
-    h+='<div class="apt-compact-head"><span>Time</span><span>Name</span><span>Type</span><span>Volunteer</span></div>';
-    todayAppts.forEach(function(r){
-      var aptType=r.apptType==='online'?'Online':isComplex(r)?'WB Follow-up':'Registration';
-      h+='<div class="apt-compact-row" onclick="go(\'detail\',\''+r.ref+'\')">';
-      h+='<span class="ac-time">'+esc(r.apptTime||'—')+'</span>';
-      h+='<span class="ac-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+'</span>';
-      h+='<span class="ac-type">'+aptType+'</span>';
-      h+='<span class="ac-vol">'+esc(r.apptSlot&&r.apptSlot!=='Anyone'?r.apptSlot:'—')+'</span>';
+      h+='<div class="action-card" onclick="go(\'detail\',\''+a.ref+'\')" style="cursor:pointer">';
+      h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+      h+='<span class="r-ref" style="font-size:11px">'+esc(a.ref)+'</span>';
+      h+='<span style="font-weight:500;font-size:14px">'+esc(a.name)+'</span>';
+      if(ov)h+='<span class="overdue-tag">Overdue</span>';
       h+='</div>';
+      h+='<div style="font-size:13px;color:var(--muted);margin-top:3px">'+esc(a.action)+'</div>';
+      h+='<div style="font-size:12px;color:var(--faint);margin-top:4px">Due: '+esc(a.dueBy||'—')+' · '+esc(a.officer)+'</div>';
+      h+='</div><span style="color:var(--faint)">'+ic('chevron-right',14)+'</span></div>';
     });
-    h+='</div>';
   }
+  h+='</div>';
 
   /* New referrals awaiting triage */
   var newRefs=refs.filter(isNewRef);
-  if(newRefs.length){
-    h+='<h2 style="margin-top:20px;margin-bottom:10px">'+ic('user-plus',16)+' New referrals awaiting triage</h2>';
-    h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th></tr></thead><tbody>';
+  h+='<div class="card" style="padding:0;overflow:hidden">';
+  h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line)"><h2 style="margin:0;display:flex;align-items:center;gap:8px">'+ic('user-plus',16)+'New referrals awaiting triage <span class="nav-badge">'+newRefs.length+'</span></h2></div>';
+  if(!newRefs.length){
+    h+='<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">No new referrals.</div>';
+  } else {
     newRefs.forEach(function(r){
-      var typeCls=r.type==='EMERGENCY'?'type-emergency':'type-standard';
-      h+='<tr onclick="go(\'detail\',\''+r.ref+'\')">';
-      h+='<td class="r-ref">'+esc(r.ref.replace('REF-',''))+'</td>';
-      h+='<td><span class="r-name">'+esc(r.name)+'</span></td>';
-      h+='<td class="r-muted">'+esc(r.borough)+'</td>';
-      h+='<td><span class="type-badge '+typeCls+'">'+(r.type==='EMERGENCY'?'Emergency':'Standard')+'</span></td>';
-      h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td></tr>';
+      h+='<div class="action-card" onclick="go(\'detail\',\''+r.ref+'\')" style="cursor:pointer">';
+      h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+      h+='<span class="r-ref" style="font-size:11px">'+esc(r.ref)+'</span>';
+      h+='<span style="font-weight:500;font-size:14px">'+esc(r.name)+'</span>';
+      if(r.type==='EMERGENCY')h+='<span class="type-badge type-emergency">Emergency</span>';
+      h+='</div>';
+      h+='<div style="font-size:12px;color:var(--faint);margin-top:4px">'+esc(r.borough)+' · Received '+fmtDate(r.receivedDate)+'</div>';
+      h+='</div><span style="color:var(--faint)">'+ic('chevron-right',14)+'</span></div>';
     });
-    h+='</tbody></table></div>';
   }
+  h+='</div>';
 
+  h+='</div>'; /* close actions-grid */
   return h;
 }
 
