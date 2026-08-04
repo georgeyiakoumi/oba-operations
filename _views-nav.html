@@ -133,20 +133,23 @@ function renderDashOverview(refs,todayStr){
     h+='</div>';
   }
 
-  /* Pipeline cards (matching health-bank PIPELINE_CONFIG) */
+  /* Pipeline cards */
   function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
   var now=new Date();
   var dueToCloseCount=closingIn(MONTHS[now.getMonth()],now.getFullYear()).length+closingIn(MONTHS[(now.getMonth()+1)%12],(now.getMonth()+1)%12===0?now.getFullYear()+1:now.getFullYear()).length;
   var taskCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
+  var benTotal=refs.filter(isBeneficiary).length;
+
+  h+='<div class="pipeline" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr))">';
+  /* Active Beneficiaries — first */
+  h+='<div class="pcard pt-green" onclick="go(\'ben\')" style="cursor:pointer"><div class="pc-icon">'+ic('users',20)+'</div><div class="num">'+benTotal+'</div><div class="lab">Active Beneficiaries</div></div>';
+  /* Standard pipeline */
   var pipe=[
     ['New','New Referrals','pt-green','user-plus','newReferrals'],
     ['Reg. Appointments','Reg. Appointments','pt-orange','calendar','registrations'],
     ['Waiting List','Waiting List','pt-dark','clipboard-check','waitingList'],
-    ['Waiting for Delivery','Awaiting Delivery','pt-plum','users','']
+    ['Waiting for Delivery','Awaiting Delivery','pt-plum','truck','']
   ];
-  var extraCards=(dueToCloseCount>0?1:0)+(taskCount>0?1:0);
-  var pipeCols=pipe.length+extraCards;
-  h+='<div class="pipeline" style="grid-template-columns:repeat('+pipeCols+',1fr)">';
   pipe.forEach(function(p){
     var cnt=pcount(p[0]);
     var clickAttr=p[4]?' onclick="go(\''+p[4]+'\')" style="cursor:pointer"':'';
@@ -155,10 +158,8 @@ function renderDashOverview(refs,todayStr){
   if(dueToCloseCount>0){
     h+='<div class="pcard pt-red"><div class="pc-icon">'+ic('alert-circle',20)+'</div><div class="num">'+dueToCloseCount+'</div><div class="lab">Due to Close</div></div>';
   }
-  /* Outstanding tasks card */
-  if(taskCount>0){
-    h+='<div class="pcard pt-plum" onclick="STATE.dashTab=1;render()" style="cursor:pointer"><div class="pc-icon">'+ic('check-square',20)+'</div><div class="num">'+taskCount+'</div><div class="lab">Outstanding Tasks</div></div>';
-  }
+  /* Outstanding Tasks — last */
+  h+='<div class="pcard pt-plum" onclick="STATE.dashTab=1;render()" style="cursor:pointer"><div class="pc-icon">'+ic('check-square',20)+'</div><div class="num">'+taskCount+'</div><div class="lab">Outstanding Tasks</div></div>';
   h+='</div>';
 
   /* Borough breakdown */
@@ -262,53 +263,54 @@ function renderDashActions(refs,todayStr){
   }
   h+='</div>';
 
-  /* Two-column grid: Outstanding actions | New referrals */
-  h+='<div class="actions-grid">';
-
-  /* Outstanding actions */
+  /* Outstanding actions — full width, with sort + volunteer filter */
   var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
-  h+='<div class="card" style="padding:0;overflow:hidden">';
-  h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line)"><h2 style="margin:0;display:flex;align-items:center;gap:8px">'+ic('folder-open',16)+'Outstanding actions <span class="nav-badge">'+allActions.length+'</span></h2></div>';
-  if(!allActions.length){
-    h+='<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">No outstanding actions.</div>';
+  /* Volunteer filter */
+  var volSet={};allActions.forEach(function(a){if(a.officer)volSet[a.officer]=true;});
+  var volNames=['All'].concat(Object.keys(volSet).sort());
+  var filteredActions=STATE.actionVolFilter==='All'?allActions:allActions.filter(function(a){return a.officer===STATE.actionVolFilter;});
+  /* Sort */
+  var aSortDir=STATE.actionSortDir==='desc'?-1:1;
+  if(STATE.actionSort==='date'){filteredActions.sort(function(a,b){return((a.dueBy||'9').localeCompare(b.dueBy||'9'))*aSortDir;});}
+  else if(STATE.actionSort==='name'){filteredActions.sort(function(a,b){return((a.name||'').localeCompare(b.name||''))*aSortDir;});}
+  else if(STATE.actionSort==='officer'){filteredActions.sort(function(a,b){return((a.officer||'').localeCompare(b.officer||''))*aSortDir;});}
+
+  h+='<div class="card" style="padding:0;overflow:hidden;margin-top:20px">';
+  h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap">';
+  h+='<h2 style="margin:0;display:flex;align-items:center;gap:8px;flex:1">'+ic('folder-open',16)+'Outstanding actions <span class="nav-badge">'+filteredActions.length+'</span></h2>';
+  /* Volunteer filter */
+  h+='<select class="filter-sel" onchange="STATE.actionVolFilter=this.value;render()">';
+  volNames.forEach(function(v){h+='<option'+(STATE.actionVolFilter===v?' selected':'')+'>'+v+'</option>';});
+  h+='</select>';
+  h+='</div>';
+
+  if(!filteredActions.length){
+    h+='<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">No outstanding actions'+(STATE.actionVolFilter!=='All'?' for '+STATE.actionVolFilter:'')+'.</div>';
   } else {
-    allActions.sort(function(a,b){return(a.dueBy||'9').localeCompare(b.dueBy||'9');});
-    allActions.forEach(function(a){
+    /* Table with sortable headers */
+    function actSortHdr(col,label){
+      var active=STATE.actionSort===col;
+      var arrow=active?(STATE.actionSortDir==='asc'?ic('chevron-up',12):ic('chevron-down',12)):ic('chevrons-up-down',12);
+      return '<th class="sortable'+(active?' sorted':'')+'" onclick="STATE.actionSort=\''+col+'\';STATE.actionSortDir=STATE.actionSort===\''+col+'\'&&STATE.actionSortDir===\'asc\'?\'desc\':\'asc\';render()">'+label+'<span class="sort-arrow">'+arrow+'</span></th>';
+    }
+    h+='<table class="rtable"><thead><tr>';
+    h+='<th>Ref</th><th>Name</th><th>Action</th>';
+    h+=actSortHdr('date','Due');
+    h+=actSortHdr('officer','Officer');
+    h+='<th></th></tr></thead><tbody>';
+    filteredActions.forEach(function(a){
       var ov=a.dueBy&&a.dueBy<todayStr;
-      h+='<div class="action-card" onclick="go(\'detail\',\''+a.ref+'\')" style="cursor:pointer">';
-      h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
-      h+='<span class="r-ref" style="font-size:11px">'+esc(a.ref)+'</span>';
-      h+='<span style="font-weight:500;font-size:14px">'+esc(a.name)+'</span>';
-      if(ov)h+='<span class="overdue-tag">Overdue</span>';
-      h+='</div>';
-      h+='<div style="font-size:13px;color:var(--muted);margin-top:3px">'+esc(a.action)+'</div>';
-      h+='<div style="font-size:12px;color:var(--faint);margin-top:4px">Due: '+esc(a.dueBy||'—')+' · '+esc(a.officer)+'</div>';
-      h+='</div><span style="color:var(--faint)">'+ic('chevron-right',14)+'</span></div>';
+      h+='<tr onclick="go(\'detail\',\''+a.ref+'\')"'+(ov?' class="dna-table-row"':'')+'>';
+      h+='<td class="r-ref" style="font-size:11px">'+esc(a.ref)+'</td>';
+      h+='<td style="font-weight:500">'+esc(a.name)+(ov?' <span class="overdue-tag">Overdue</span>':'')+'</td>';
+      h+='<td class="r-muted" style="font-size:13px">'+esc(a.action)+'</td>';
+      h+='<td class="r-muted" style="white-space:nowrap">'+esc(a.dueBy||'—')+'</td>';
+      h+='<td class="r-muted">'+esc(a.officer)+'</td>';
+      h+='<td style="color:var(--faint)">'+ic('chevron-right',14)+'</td></tr>';
     });
+    h+='</tbody></table>';
   }
   h+='</div>';
-
-  /* New referrals awaiting triage */
-  var newRefs=refs.filter(isNewRef);
-  h+='<div class="card" style="padding:0;overflow:hidden">';
-  h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line)"><h2 style="margin:0;display:flex;align-items:center;gap:8px">'+ic('user-plus',16)+'New referrals awaiting triage <span class="nav-badge">'+newRefs.length+'</span></h2></div>';
-  if(!newRefs.length){
-    h+='<div style="padding:24px;text-align:center;color:var(--muted);font-size:14px">No new referrals.</div>';
-  } else {
-    newRefs.forEach(function(r){
-      h+='<div class="action-card" onclick="go(\'detail\',\''+r.ref+'\')" style="cursor:pointer">';
-      h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
-      h+='<span class="r-ref" style="font-size:11px">'+esc(r.ref)+'</span>';
-      h+='<span style="font-weight:500;font-size:14px">'+esc(r.name)+'</span>';
-      if(r.type==='EMERGENCY')h+='<span class="type-badge type-emergency">Emergency</span>';
-      h+='</div>';
-      h+='<div style="font-size:12px;color:var(--faint);margin-top:4px">'+esc(r.borough)+' · Received '+fmtDate(r.receivedDate)+'</div>';
-      h+='</div><span style="color:var(--faint)">'+ic('chevron-right',14)+'</span></div>';
-    });
-  }
-  h+='</div>';
-
-  h+='</div>'; /* close actions-grid */
   return h;
 }
 
@@ -421,7 +423,8 @@ function renderNewReferrals(){
     if(!q) return true;
     return (r.ref+' '+r.name+' '+r.borough+' '+r.phone+' '+r.email).toLowerCase().indexOf(q)>=0;
   });
-  var h='<div class="head-row"><div><h1>New Referrals</h1><p style="color:var(--muted);margin-top:4px">Referrals received but not yet fully registered.</p></div>';
+  var h=renderLambethBar();
+  h+='<div class="head-row"><div><h1>New Referrals</h1><p style="color:var(--muted);margin-top:4px">Referrals received but not yet fully registered.</p></div>';
   h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name, ref, phone…" value="'+esc(STATE.newRefSearch||'')+'" oninput="STATE.newRefSearch=this.value;render()"></div></div>';
   if(!refs.length){h+='<div class="card placeholder"><div class="pic">'+ic('new_ref',32)+'</div><b>No new referrals match</b><p style="margin-top:8px">Try a different search, or clear the search box.</p></div>';return h;}
   h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th><th>Status</th></tr></thead><tbody>';
