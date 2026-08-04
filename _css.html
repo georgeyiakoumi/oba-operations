@@ -62,12 +62,12 @@
   --tone-plum-bg: var(--plum-bg);
   --tone-plum-tx: var(--plum);
 
-  /* ── Sidebar ── */
-  --sidebar: #18240c;
-  --sidebar-hov: #233413;
-  --sidebar-txt: #a9b78c;
-  --sidebar-active: #a7c74a;
-  --sidebar-subnav: #2c3d17;
+  /* ── Sidebar (light, matching health-bank) ── */
+  --sidebar: #f5f4ec;
+  --sidebar-hov: #eae9df;
+  --sidebar-txt: #6f7562;
+  --sidebar-active: #557a16;
+  --sidebar-subnav: #e0dfd3;
 
   /* ── Surfaces & borders ── */
   --line: #e6e4d7;
@@ -145,9 +145,10 @@ h2 {
 /* ── SIDEBAR ── */
 
 .sidebar {
-  width: 228px;
+  width: 240px;
   flex-shrink: 0;
   background: var(--sidebar);
+  border-right: 1px solid var(--line);
   color: var(--sidebar-txt);
   display: flex;
   flex-direction: column;
@@ -160,6 +161,7 @@ h2 {
 
 .brand-card {
   background: var(--card);
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 11px 13px;
   margin: 4px 4px 4px;
@@ -172,14 +174,14 @@ h2 {
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 15px;
-  color: var(--sidebar-subnav);
+  color: var(--green-deep);
   line-height: 1.05;
 }
 
 .brand-card .logo-sub {
   font-size: 9px;
   font-style: italic;
-  color: #7c8a4e;
+  color: var(--muted);
   margin-top: 1px;
 }
 
@@ -187,7 +189,7 @@ h2 {
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: .22em;
-  color: #5f6d3c;
+  color: var(--faint);
   padding: 5px 12px 10px;
 }
 
@@ -206,14 +208,15 @@ h2 {
   font-weight: 500;
 }
 
-.nav-item:hover { background: var(--sidebar-hov); color: #dfe7c9 }
-.nav-item.active, .nav-item.active-parent { color: #fff; font-weight: 600 }
+.nav-item:hover { background: var(--sidebar-hov); color: var(--ink) }
+.nav-item.active, .nav-item.active-parent { color: var(--green-deep); font-weight: 600 }
 .nav-item.active .nav-ic, .nav-item.active-parent .nav-ic { color: var(--sidebar-active) }
-.nav-ic { width: 17px; text-align: center; flex-shrink: 0 }
+.nav-ic { width: 17px; text-align: center; flex-shrink: 0; color: var(--faint) }
+.nav-item.active .nav-ic, .nav-item.active-parent .nav-ic { color: var(--green) }
 .nav-lbl { flex: 1 }
 
 .nav-badge {
-  background: #6f8e28;
+  background: var(--green);
   color: #fff;
   font-size: 11px;
   font-weight: 600;
@@ -248,8 +251,8 @@ h2 {
   gap: 7px;
 }
 
-.subnav button:hover { color: #dfe7c9; background: var(--sidebar-hov) }
-.subnav button.active { background: var(--sidebar-subnav); color: var(--sidebar-active); font-weight: 600 }
+.subnav button:hover { color: var(--ink); background: var(--sidebar-hov) }
+.subnav button.active { background: var(--card); border: 1px solid var(--line); color: var(--green-deep); font-weight: 600 }
 
 .subnav button .sub-badge {
   background: var(--orange);
@@ -271,12 +274,12 @@ h2 {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #556b30;
+  color: var(--faint);
   font-family: var(--font-mono);
   font-size: 11px;
 }
 
-.side-foot a { color: #7c8a4e }
+.side-foot a { color: var(--green) }
 
 
 /* ── MAIN ── */
@@ -908,7 +911,7 @@ select.filter-sel {
 /* ── RISK AREAS (WELLBEING DETAIL) ── */
 
 .stat-cards { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap }
-.stat-c { background: var(--sidebar-hov); color: #dfe7c9; border-radius: 9px; padding: 12px 20px; min-width: 140px }
+.stat-c { background: var(--green-deep); color: #dfe7c9; border-radius: 9px; padding: 12px 20px; min-width: 140px }
 .stat-c .sl { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: #95a76e }
 .stat-c .sn { font-family: var(--font-heading); font-weight: 700; font-size: 24px; color: #fff; margin-top: 3px }
 
