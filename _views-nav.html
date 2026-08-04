@@ -137,13 +137,15 @@ function renderDashOverview(refs,todayStr){
   function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
   var now=new Date();
   var dueToCloseCount=closingIn(MONTHS[now.getMonth()],now.getFullYear()).length+closingIn(MONTHS[(now.getMonth()+1)%12],(now.getMonth()+1)%12===0?now.getFullYear()+1:now.getFullYear()).length;
+  var taskCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
   var pipe=[
     ['New','New Referrals','pt-green','user-plus','newReferrals'],
     ['Reg. Appointments','Reg. Appointments','pt-orange','calendar','registrations'],
     ['Waiting List','Waiting List','pt-dark','clipboard-check','waitingList'],
     ['Waiting for Delivery','Awaiting Delivery','pt-plum','users','']
   ];
-  var pipeCols=dueToCloseCount>0?pipe.length+1:pipe.length;
+  var extraCards=(dueToCloseCount>0?1:0)+(taskCount>0?1:0);
+  var pipeCols=pipe.length+extraCards;
   h+='<div class="pipeline" style="grid-template-columns:repeat('+pipeCols+',1fr)">';
   pipe.forEach(function(p){
     var cnt=pcount(p[0]);
@@ -152,6 +154,10 @@ function renderDashOverview(refs,todayStr){
   });
   if(dueToCloseCount>0){
     h+='<div class="pcard pt-red"><div class="pc-icon">'+ic('alert-circle',20)+'</div><div class="num">'+dueToCloseCount+'</div><div class="lab">Due to Close</div></div>';
+  }
+  /* Outstanding tasks card */
+  if(taskCount>0){
+    h+='<div class="pcard pt-plum" onclick="STATE.dashTab=1;render()" style="cursor:pointer"><div class="pc-icon">'+ic('check-square',20)+'</div><div class="num">'+taskCount+'</div><div class="lab">Outstanding Tasks</div></div>';
   }
   h+='</div>';
 
