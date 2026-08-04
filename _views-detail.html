@@ -122,23 +122,9 @@ function setStepGuarded(n,ref){
 }
 function changeStatus(ref,status){var r=getRef(ref);r.status=status;if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Status saved');}).setStatus(ref,status);else toast('Status updated (demo)');render();}
 
-/* Step 0 — Referral Information + Household Lookup */
+/* Step 0 — Referral Information + Household Management */
 function renderStepReferralInfo(r){
-  /* household lookup across all refs (dev: replace with DB query) */
-  var matches=(DATA.referrals||[]).filter(function(x){
-    if(x.ref===r.ref)return false;
-    var rSurname=(r.name||'').split(' ').pop().toLowerCase();
-    var xSurname=(x.name||'').split(' ').pop().toLowerCase();
-    return rSurname.length>2 && rSurname===xSurname;
-  });
-  /* historical referrals for this household */
-  var hist=(DATA.historicalReferrals||[]).filter(function(h){
-    var rSurname=(r.name||'').split(' ').pop().toLowerCase();
-    return (h.household||'').toLowerCase().indexOf(rSurname)>=0;
-  });
-  var prevRefs=matches.concat(hist);
   var h='';
-  /* DataList card grid */
   function dlCard(title,rows){
     var c='<div class="datalist-card"><div class="dl-title">'+title+'</div>';
     rows.forEach(function(row){c+='<div class="dl-row"><span class="dl-label">'+row[0]+'</span><span class="dl-value">'+esc(row[1]||'—')+'</span></div>';});
@@ -147,7 +133,6 @@ function renderStepReferralInfo(r){
   h+='<div class="datalist-grid">';
   h+=dlCard('Contact',[['Phone',r.phone],['Email',r.email],['Borough',r.borough]]);
   h+=dlCard('Household',[['Adults',r.adults],['Children',formatChildren(r.children,r.ages)],['Household size',(parseInt(r.adults)||0)+(parseInt(r.children)||0)+'']]);
-
   h+=dlCard('Referral',[['Type',r.type],['Received',fmtDate(r.receivedDate)],['Status',r.status],['Support',monthsOpen(r)]]);
   h+=dlCard('Distribution',[['Group',r.distributionGroup||'—'],['Type',r.distributionType||'—'],['WB Officer',r.wbOfficer||'—']]);
   h+='</div>';
@@ -156,45 +141,124 @@ function renderStepReferralInfo(r){
   h+='<div class="mini-label">Reason for referral / circumstances</div>';
   h+='<div style="font-size:14.5px;line-height:1.55;margin-top:6px">'+esc(r.circumstances||'Not provided')+'</div>';
   h+='</div>';
-  /* household lookup */
+
+  /* ── Household Management ── */
   h+='<div class="divider"></div>';
-  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+ic('search',18)+'<div style="font-weight:600;font-size:15.5px">Household Lookup</div>';
-  h+='<span style="font-family:\'IBM Plex Mono\';font-size:10.5px;background:var(--orange-bg);color:var(--orange);padding:2px 8px;border-radius:5px">DEV[5]: wire to DB search</span></div>';
-  if(prevRefs.length===0){
-    h+='<div class="callout green">'+ic('check',15)+'<span><b>No previous records found</b> for this surname. This appears to be a first-time referral.</span></div>';
-  } else {
-    h+='<div class="callout amber">'+ic('warn',15)+'<span><b>'+prevRefs.length+' possible match'+(prevRefs.length>1?'es':'')+' found.</b> Review below and check for discrepancies.</span></div>';
-    h+='<div class="wsec-title" style="font-size:15px;margin:16px 0 10px">Previous records — compare with current referral</div>';
-    prevRefs.forEach(function(x){
-      var isHist=!!x.household;
-      h+='<div style="border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;overflow:hidden">';
-      h+='<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#f9f8f2;border-bottom:1px solid var(--line)">';
-      h+=ic('ref',15)+'<span style="font-family:\'IBM Plex Mono\';font-size:13px;color:var(--green-bright);font-weight:500">'+esc(x.ref||'Historical')+'</span>';
-      h+='<span style="color:var(--muted);font-size:13px">'+esc(isHist?x.household:x.name)+' · '+(isHist?x.openFrom+' – '+x.openTo:fmtDate(x.receivedDate))+'</span>';
-      if(isHist)h+='<span style="font-family:\'IBM Plex Mono\';font-size:10px;background:var(--grey-bg);color:var(--grey-tx);padding:2px 7px;border-radius:5px">Previous</span>';
+  var hh=getHouseholdForRef(r.ref);
+
+  if(hh){
+    /* Linked to household — show household info + history + admin actions */
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
+    h+=ic('home',18)+'<div style="font-weight:600;font-size:15.5px">Household: '+esc(hh.primaryName)+'</div>';
+    h+='<span class="hh-linked-badge">'+esc(hh.id)+' · '+hh.linkedRefs.length+' referral'+(hh.linkedRefs.length>1?'s':'')+'</span>';
+    h+='</div>';
+
+    /* Side-by-side comparison: referral vs household */
+    h+='<div class="compare-grid" style="margin-bottom:18px">';
+    h+='<div class="compare-col-head">This referral</div><div class="compare-col-head right">Household record</div>';
+    var cfields=[['Phone',r.phone,hh.phone],['Email',r.email,hh.email],['Borough',r.borough,hh.borough],['Adults',r.adults,hh.adults],['Children',r.children,hh.children]];
+    cfields.forEach(function(cf){
+      var diff=(cf[1]||'').trim()!==(cf[2]||'').trim();
+      h+='<div class="compare-cell'+(diff?' diff':'')+'"><label>'+cf[0]+'</label>'+esc(cf[1]||'—')+'</div>';
+      h+='<div class="compare-cell right'+(diff?' diff':'')+'"><label>'+cf[0]+(diff?' <span style="color:var(--orange)">⚠ differs</span>':'')+'</label>'+esc(cf[2]||'—');
+      if(diff)h+=' <button class="copy-btn" onclick="getHousehold(\''+hh.id+'\').'+cf[0].toLowerCase()+'=\''+esc(cf[1])+'\';render()">'+ic('arrow',11)+'Update household</button>';
       h+='</div>';
-      h+='<div class="compare-grid">';
-      h+='<div class="compare-col-head">Current referral</div><div class="compare-col-head right">Household record (editable)</div>';
-      var cfields=[
-        ['Adults',r.adults,x.adults],
-        ['Children',r.children,x.children||'—'],
-        ['Phone',r.phone,x.phone],
-        ['Email',r.email,x.email],
-        ['Borough',r.borough,x.borough],
-      ];
-      cfields.forEach(function(cf){
-        var diff=(cf[1]||'').trim()!==(cf[2]||'').trim()&&(cf[2]||'—')!=='—';
-        h+='<div class="compare-cell'+(diff?' diff':'')+'"><label>'+cf[0]+'</label>'+esc(cf[1]||'—')+'</div>';
-        h+='<div class="compare-cell right'+(diff?' diff':'')+'"><label>'+cf[0]+(diff?' <span style="color:var(--orange)">⚠ differs</span>':'')+'</label>';
-        h+='<input value="'+esc(cf[2]||'')+'"> ';
-        if(diff)h+='<button class="copy-btn" onclick="this.parentElement.querySelector(\'input\').value=\''+esc(cf[1])+'\'">'+ic('arrow',11)+'Use current</button>';
+    });
+    h+='</div>';
+
+    /* Referral history for this household */
+    var allHhRefs=[];
+    hh.linkedRefs.forEach(function(refId){
+      var live=getRef(refId);if(live)allHhRefs.push({ref:refId,name:live.name,date:live.receivedDate,period:monthsOpen(live),status:live.status,isCurrent:refId===r.ref,type:'live'});
+    });
+    (DATA.historicalReferrals||[]).filter(function(hr){return hr.householdId===hh.id;}).forEach(function(hr){
+      if(!allHhRefs.find(function(x){return x.ref===hr.ref;}))allHhRefs.push({ref:hr.ref,date:hr.receivedDate,period:hr.openFrom+' – '+hr.openTo,status:hr.status,isCurrent:false,type:'historical'});
+    });
+
+    if(allHhRefs.length>1){
+      h+='<h2 style="margin-bottom:10px;font-size:15px">Referral history ('+allHhRefs.length+')</h2>';
+      h+='<div class="ref-hist-row">';
+      allHhRefs.forEach(function(x){
+        h+='<div class="ref-hist-box'+(x.isCurrent?' current':'')+'"'+(x.type==='live'&&!x.isCurrent?' onclick="go(\'detail\',\''+x.ref+'\')" style="cursor:pointer"':'')+'">';
+        h+='<div class="rh-label">'+esc(x.ref)+(x.isCurrent?' · Current':x.type==='historical'?' · Historical':'')+'</div>';
+        h+='<div class="rh-period">'+esc(x.period||fmtDate(x.date))+'</div>';
+        h+='<div class="rh-status">'+esc(x.status)+'</div></div>';
+      });
+      h+='</div>';
+    }
+
+    /* Admin actions: Separate from household */
+    h+='<details style="margin-top:14px"><summary style="font-size:13px;color:var(--muted);cursor:pointer;user-select:none">'+ic('lock',13)+' Admin actions (requires password)</summary>';
+    h+='<div style="margin-top:10px;padding:14px;border:1px solid var(--line);border-radius:8px;background:#fafaf7">';
+    h+='<div style="margin-bottom:10px"><b>Separate from household</b> — unlink this referral and create a new household for it.</div>';
+    h+='<div class="hh-admin-input"><input type="password" id="sep-pw" placeholder="Admin password"><button class="btn btn-ghost" onclick="separateFromHousehold(\''+r.ref+'\',document.getElementById(\'sep-pw\').value)">Separate</button></div>';
+    h+='</div></details>';
+
+  } else {
+    /* Not linked to any household — show search/create */
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">';
+    h+=ic('search',18)+'<div style="font-weight:600;font-size:15.5px">Household Lookup</div>';
+    h+='</div>';
+
+    /* Auto-search by surname */
+    var surname=(r.name||'').split(' ').pop().toLowerCase();
+    var autoResults=searchHouseholds(surname);
+
+    if(autoResults.length){
+      h+='<div class="callout amber" style="margin-bottom:14px">'+ic('warn',15)+'<span><b>'+autoResults.length+' possible household match'+(autoResults.length>1?'es':'')+'</b> found for surname "'+esc(surname)+'".</span></div>';
+      autoResults.forEach(function(res){
+        var hh2=res.data;
+        h+='<div class="hh-result" onclick="STATE.hhSearchSelected=\''+hh2.id+'\';render()"'+(STATE.hhSearchSelected===hh2.id?' class="hh-result selected"':'')+'>';
+        h+='<div class="hh-avatar">'+esc(hh2.primaryName.charAt(0))+'</div>';
+        h+='<div class="hh-info"><div class="hh-name">'+esc(hh2.primaryName)+' <span class="hh-linked-badge">'+hh2.id+'</span></div>';
+        h+='<div class="hh-meta">'+esc(hh2.borough)+' · '+hh2.linkedRefs.length+' referral'+(hh2.linkedRefs.length>1?'s':'')+' · Created '+esc(hh2.created)+'</div></div>';
         h+='</div>';
       });
-      h+='</div></div>';
-    });
+      if(STATE.hhSearchSelected){
+        h+='<button class="btn btn-green" style="margin-top:10px" onclick="linkToHousehold(\''+r.ref+'\',\''+STATE.hhSearchSelected+'\')">'+ic('link',15)+'Add into existing household</button> ';
+      }
+      h+='<button class="btn btn-ghost" style="margin-top:10px" onclick="createHousehold(\''+r.ref+'\')">'+ic('plus',15)+'Create new household instead</button>';
+    } else {
+      h+='<div class="callout green" style="margin-bottom:14px">'+ic('check',15)+'<span><b>No previous records found</b> for this surname. This appears to be a first-time referral.</span></div>';
+      h+='<button class="btn btn-green" onclick="createHousehold(\''+r.ref+'\')">'+ic('plus',15)+'Create new household</button>';
+    }
+
+    /* Manual search */
+    h+='<div style="margin-top:18px">';
+    h+='<button class="btn btn-ghost" onclick="STATE.hhSearchOpen=!STATE.hhSearchOpen;render()">'+ic('search',15)+(STATE.hhSearchOpen?'Close manual search':'Manual Search')+'</button>';
+    if(STATE.hhSearchOpen){
+      h+='<div class="hh-search-panel">';
+      h+='<div class="hh-search-grid">';
+      h+='<input id="hh-sq" placeholder="Name, surname, phone, email, postcode, ref…" value="'+esc(STATE.hhSearchQuery||'')+'" oninput="STATE.hhSearchQuery=this.value">';
+      h+='<button class="btn btn-green" onclick="STATE.hhSearchQuery=document.getElementById(\'hh-sq\').value;render()">Search</button>';
+      h+='</div>';
+      if(STATE.hhSearchQuery&&STATE.hhSearchQuery.length>=2){
+        var manualResults=searchHouseholds(STATE.hhSearchQuery);
+        if(!manualResults.length){
+          h+='<p style="color:var(--muted);font-size:14px;margin:10px 0">No matches found for "'+esc(STATE.hhSearchQuery)+'".</p>';
+          h+='<button class="btn btn-green" onclick="createHousehold(\''+r.ref+'\')">'+ic('plus',15)+'Create new household</button>';
+        } else {
+          h+='<p style="color:var(--muted);font-size:13px;margin-bottom:8px">'+manualResults.length+' result'+(manualResults.length>1?'s':'')+':</p>';
+          manualResults.forEach(function(res){
+            var hh3=res.data;
+            var isSel=STATE.hhSearchSelected===hh3.id;
+            h+='<div class="hh-result'+(isSel?' selected':'')+'" onclick="STATE.hhSearchSelected=\''+hh3.id+'\';render()">';
+            h+='<div class="hh-avatar">'+esc(hh3.primaryName.charAt(0))+'</div>';
+            h+='<div class="hh-info"><div class="hh-name">'+esc(hh3.primaryName)+' <span class="hh-linked-badge">'+hh3.id+'</span></div>';
+            h+='<div class="hh-meta">'+esc(hh3.borough)+' · '+esc(hh3.phone)+' · '+hh3.linkedRefs.length+' referral'+(hh3.linkedRefs.length>1?'s':'')+'</div></div>';
+            h+='</div>';
+          });
+          if(STATE.hhSearchSelected){
+            h+='<button class="btn btn-green" style="margin-top:10px" onclick="linkToHousehold(\''+r.ref+'\',\''+STATE.hhSearchSelected+'\')">'+ic('link',15)+'Add into existing household</button>';
+          }
+        }
+      }
+      h+='</div>';
+    }
+    h+='</div>';
   }
+
   h+='<div style="margin-top:18px"><button class="btn btn-green" onclick="setStep(2)">'+ic('arrow',15)+'Continue to Triage & Validation</button></div>';
-  h+='</div>';
   return h;
 }
 /* Step 1 (now step 2) — Triage & Validation */

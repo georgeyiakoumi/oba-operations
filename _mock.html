@@ -2,17 +2,17 @@
 var MOCK={
   boroughCounts:{Lambeth:46,Southwark:5,Wandsworth:5,Croydon:4},
   referrals:[
-    {ref:'REF-0201',name:'Tariq Chowdhury',borough:'Lambeth',type:'STANDARD',receivedDate:'12 May',adults:'3',children:'0',ages:'',email:'tariq.c@email.com',phone:'07700 900201',status:'Active Beneficiary',flags:'',circumstances:'Chronic illness limiting ability to work.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Dec 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
-    {ref:'REF-0202',name:'Adam Owens',borough:'Lambeth',type:'STANDARD',receivedDate:'16 May',adults:'3',children:'0',ages:'',email:'adam.o@email.com',phone:'07700 900202',status:'Active Beneficiary',flags:'',circumstances:'Temporary job loss, rebuilding.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Dec 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0201',householdId:'HH-001',name:'Tariq Chowdhury',borough:'Lambeth',type:'STANDARD',receivedDate:'12 May',adults:'3',children:'0',ages:'',email:'tariq.c@email.com',phone:'07700 900201',status:'Active Beneficiary',flags:'',circumstances:'Chronic illness limiting ability to work.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Dec 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0202',householdId:'HH-002',name:'Adam Owens',borough:'Lambeth',type:'STANDARD',receivedDate:'16 May',adults:'3',children:'0',ages:'',email:'adam.o@email.com',phone:'07700 900202',status:'Active Beneficiary',flags:'',circumstances:'Temporary job loss, rebuilding.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Dec 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
     {ref:'REF-0203',name:'Mark Barton',borough:'Lambeth',type:'STANDARD',receivedDate:'11 May',adults:'1',children:'2',ages:'6F,11F',email:'mark.b@email.com',phone:'07700 900203',status:'Close file due to non-engagement',flags:'',circumstances:'Both adults on zero-hours, hours cut sharply.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
     {ref:'REF-0204',name:'Edward Davis',borough:'Lambeth',type:'STANDARD',receivedDate:'19 Jun',adults:'2',children:'0',ages:'',email:'edward.d@email.com',phone:'07700 900204',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Benefit delays causing short-term crisis.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jul 2026',openTo:'Oct 2026',wbOfficer:'Olivia',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
-    {ref:'REF-0205',name:'Maya Frederick',borough:'Lambeth',type:'STANDARD',receivedDate:'15 May',adults:'3',children:'0',ages:'',email:'maya.f@email.com',phone:'07700 900205',status:'Active Beneficiary',flags:'',circumstances:'Job loss, now stable but needs support.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
-    {ref:'REF-0206',name:'Carlos Gupta',borough:'Croydon',type:'STANDARD',receivedDate:'09 Apr',adults:'3',children:'2',ages:'14M,2M',email:'carlos.g@email.com',phone:'07700 900206',status:'Registration Complete - WB follow up required [complex]',flags:'complex,dv',circumstances:'Single parent, recently signed off work sick.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Despina',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0205',householdId:'HH-003',name:'Maya Frederick',borough:'Lambeth',type:'STANDARD',receivedDate:'15 May',adults:'3',children:'0',ages:'',email:'maya.f@email.com',phone:'07700 900205',status:'Active Beneficiary',flags:'',circumstances:'Job loss, now stable but needs support.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0206',householdId:'HH-006',name:'Carlos Gupta',borough:'Croydon',type:'STANDARD',receivedDate:'09 Apr',adults:'3',children:'2',ages:'14M,2M',email:'carlos.g@email.com',phone:'07700 900206',status:'Registration Complete - WB follow up required [complex]',flags:'complex,dv',circumstances:'Single parent, recently signed off work sick.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Despina',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0207',name:'Maya Mahmood',borough:'Lambeth',type:'STANDARD',receivedDate:'18 Jul',adults:'2',children:'1',ages:'10F',email:'maya.m@email.com',phone:'07700 900207',status:'Added to waiting list',flags:'',circumstances:'Single parent with newborn, partner left.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
-    {ref:'REF-0208',name:'Zara Martin',borough:'Lambeth',type:'STANDARD',receivedDate:'20 Apr',adults:'1',children:'1',ages:'2F',email:'zara.m@email.com',phone:'07700 900208',status:'Active Beneficiary',flags:'interpreter',circumstances:'No recourse to public funds, asylum seeker.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0208',householdId:'HH-004',name:'Zara Martin',borough:'Lambeth',type:'STANDARD',receivedDate:'20 Apr',adults:'1',children:'1',ages:'2F',email:'zara.m@email.com',phone:'07700 900208',status:'Active Beneficiary',flags:'interpreter',circumstances:'No recourse to public funds, asylum seeker.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
     {ref:'REF-0209',name:'Mila Gupta',borough:'Lambeth',type:'EMERGENCY',receivedDate:'04 May',adults:'1',children:'1',ages:'10M',email:'mila.g@email.com',phone:'07700 900209',status:'Close file due to non-engagement',flags:'',circumstances:'UC awarded but insufficient for household size.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
     {ref:'REF-0210',name:'Jennifer Begum',borough:'Lambeth',type:'STANDARD',receivedDate:'18 Apr',adults:'2',children:'2',ages:'7M,9M',email:'jennifer.b@email.com',phone:'07700 900210',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Zero-hours contract, irregular income.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Sonya',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
-    {ref:'REF-0211',name:'Audrey Wagner',borough:'Lambeth',type:'STANDARD',receivedDate:'01 May',adults:'2',children:'0',ages:'',email:'audrey.w@email.com',phone:'07700 900211',status:'Active Beneficiary',flags:'disability',circumstances:'UC awarded but insufficient for household size.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0211',householdId:'HH-005',name:'Audrey Wagner',borough:'Lambeth',type:'STANDARD',receivedDate:'01 May',adults:'2',children:'0',ages:'',email:'audrey.w@email.com',phone:'07700 900211',status:'Active Beneficiary',flags:'disability',circumstances:'UC awarded but insufficient for household size.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0212',name:'Priya Okonkwo',borough:'Southwark',type:'STANDARD',receivedDate:'12 May',adults:'2',children:'3',ages:'10M,7F,2F',email:'priya.o@email.com',phone:'07700 900212',status:'Active Beneficiary',flags:'',circumstances:'Mental health crisis, needs wraparound support.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0213',name:'Ava Hunt',borough:'Lambeth',type:'STANDARD',receivedDate:'15 Jun',adults:'2',children:'1',ages:'3F',email:'ava.h@email.com',phone:'07700 900213',status:'Registration Complete - No follow up required',flags:'',circumstances:'Lost job, waiting on first UC payment.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jul 2026',openTo:'Oct 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
     {ref:'REF-0214',name:'Adam Scott',borough:'Wandsworth',type:'STANDARD',receivedDate:'07 May',adults:'2',children:'2',ages:'11M,7F',email:'adam.s@email.com',phone:'07700 900214',status:'On waiting list for delivery',flags:'',circumstances:'No recourse to public funds, asylum seeker.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
@@ -41,7 +41,7 @@ var MOCK={
     {ref:'REF-0237',name:'Nadia Ibrahim',borough:'Lambeth',type:'EMERGENCY',receivedDate:'08 Apr',adults:'2',children:'1',ages:'11F',email:'nadia.i@email.com',phone:'07700 900237',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Eviction notice, emergency support needed.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Despina',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0238',name:'Theo Knight',borough:'Lambeth',type:'STANDARD',receivedDate:'20 May',adults:'2',children:'1',ages:'6F',email:'theo.k@email.com',phone:'07700 900238',status:'Registration Complete - No follow up required',flags:'disability',circumstances:'Single parent with newborn, partner left.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0239',name:'Leslie Rashid',borough:'Wandsworth',type:'STANDARD',receivedDate:'19 Apr',adults:'3',children:'0',ages:'',email:'leslie.r@email.com',phone:'07700 900239',status:'Ongoing Support',flags:'',circumstances:'Chronic illness limiting ability to work.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
-    {ref:'REF-0240',name:'Ethan Huber',borough:'Lambeth',type:'STANDARD',receivedDate:'14 Apr',adults:'3',children:'3',ages:'10F,12M,12M',email:'ethan.h@email.com',phone:'07700 900240',status:'Registration Complete - WB follow up required [complex]',flags:'complex,disability',circumstances:'Zero-hours contract, irregular income.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Olivia',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0240',householdId:'HH-007',name:'Ethan Huber',borough:'Lambeth',type:'STANDARD',receivedDate:'14 Apr',adults:'3',children:'3',ages:'10F,12M,12M',email:'ethan.h@email.com',phone:'07700 900240',status:'Registration Complete - WB follow up required [complex]',flags:'complex,disability',circumstances:'Zero-hours contract, irregular income.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Olivia',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
     {ref:'REF-0241',name:'Audrey Thompson',borough:'Lambeth',type:'STANDARD',receivedDate:'26 Jul',adults:'3',children:'2',ages:'11F,14M',email:'audrey.t@email.com',phone:'07700 900241',status:'Referral received',flags:'',circumstances:'Fled temporary accommodation with very little.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
     {ref:'REF-0242',name:'Patricia Patel',borough:'Wandsworth',type:'STANDARD',receivedDate:'05 May',adults:'2',children:'2',ages:'14M,3F',email:'patricia.p@email.com',phone:'07700 900242',status:'Ongoing Support',flags:'',circumstances:'Single parent with newborn, partner left.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
     {ref:'REF-0243',name:'Leo Okonkwo',borough:'Lambeth',type:'STANDARD',receivedDate:'15 May',adults:'3',children:'0',ages:'',email:'leo.o@email.com',phone:'07700 900243',status:'Active Beneficiary',flags:'',circumstances:'Recently made redundant, savings depleted.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
@@ -78,22 +78,34 @@ var MOCK={
     {noteId:'N-4',ref:'REF-0227',date:relDate(-2),author:'Sophie',category:'Medical',duration:'10',text:'Chronic illness limits ability to collect — switched to delivery. Chasing doctor letter to confirm for UC journal.'}
   ],
   actions:[
-    {actionId:'A-1',ref:'REF-0206',name:'Carlos Gupta',action:'Call beneficiary re: DV disclosure — safety check',dueBy:relDate(-1),officer:'Sophie',priority:'urgent',status:'open'},
-    {actionId:'A-2',ref:'REF-0206',name:'Carlos Gupta',action:'Chase Income Max CIC on disability benefits check',dueBy:relDate(5),officer:'Sophie',priority:'pending',status:'open'},
-    {actionId:'A-3',ref:'REF-0240',name:'Ethan Huber',action:'Follow up with SHINE on debt referral outcome',dueBy:relDate(3),officer:'Olivia',priority:'pending',status:'open'},
+    {actionId:'A-1',ref:'REF-0206',householdId:'HH-006',name:'Carlos Gupta',action:'Call beneficiary re: DV disclosure — safety check',dueBy:relDate(-1),officer:'Sophie',priority:'urgent',status:'open'},
+    {actionId:'A-2',ref:'REF-0206',householdId:'HH-006',name:'Carlos Gupta',action:'Chase Income Max CIC on disability benefits check',dueBy:relDate(5),officer:'Sophie',priority:'pending',status:'open'},
+    {actionId:'A-3',ref:'REF-0240',householdId:'HH-007',name:'Ethan Huber',action:'Follow up with SHINE on debt referral outcome',dueBy:relDate(3),officer:'Olivia',priority:'pending',status:'open'},
     {actionId:'A-4',ref:'REF-0227',name:'Deniz Molina',action:'Book month-2 extension review (needs two staff to agree)',dueBy:relDate(1),officer:'Sophie',priority:'urgent',status:'open'}
   ],
   historicalReferrals:[
-    {ref:'REF-0012',household:'Carlos Gupta',borough:'Croydon',receivedDate:'14 Feb 2024',openFrom:'Mar 2024',openTo:'Jun 2024',status:'Registration Complete - No follow up required',adults:'2',children:'1',ages:'10M',phone:'07700 900012',email:'carlos.g@email.com',circumstances:'Food crisis following benefit sanction. No complex needs at that time.',notes:'Closed after 3 months. No safeguarding concerns.'},
-    {ref:'REF-0058',household:'Carlos Gupta',borough:'Croydon',receivedDate:'03 Sep 2025',openFrom:'Oct 2025',openTo:'Jan 2026',status:'Registration Complete - WB follow up required [complex]',adults:'2',children:'2',ages:'12M,2M',phone:'07700 900058',email:'carlos.g@email.com',circumstances:'DV situation emerged. Complex MH needs flagged.',notes:'Safeguarding referral made. Case closed after 4 months with ongoing support plan.'},
-    {ref:'REF-0071',household:'Ethan Huber',borough:'Lambeth',receivedDate:'11 Jan 2025',openFrom:'Jan 2025',openTo:'Apr 2025',status:'Registration Complete - No follow up required',adults:'2',children:'2',ages:'8F,10M',phone:'07700 900071',email:'ethan.h@email.com',circumstances:'Job loss, short-term food crisis.',notes:'Resolved within standard 3-month cycle.'},
-    {ref:'REF-0089',household:'Deniz Molina',borough:'Southwark',receivedDate:'22 May 2025',openFrom:'Jun 2025',openTo:'Sep 2025',status:'Registration Complete - No follow up required',adults:'3',children:'1',ages:'14F',phone:'07700 900089',email:'deniz.m@email.com',circumstances:'Universal Credit delays, rent arrears.',notes:'Referred to SHINE during registration. Case closed after 3 months.'}
+    {ref:'REF-0012',householdId:'HH-001',borough:'Lambeth',receivedDate:'14 Feb 2024',openFrom:'Mar 2024',openTo:'Jun 2024',status:'Registration Complete - No follow up required',adults:'3',children:'0',ages:'',phone:'07700 900201',email:'tariq.c@email.com',circumstances:'Benefit sanction, short-term food crisis.',notes:'Closed after 3 months. No complex needs.'},
+    {ref:'REF-0030',householdId:'HH-002',borough:'Lambeth',receivedDate:'10 Aug 2024',openFrom:'Sep 2024',openTo:'Dec 2024',status:'Registration Complete - No follow up required',adults:'3',children:'0',ages:'',phone:'07700 900202',email:'adam.o@email.com',circumstances:'Redundancy, awaiting new employment.',notes:'Found work in month 3. Closed on schedule.'},
+    {ref:'REF-0045',householdId:'HH-003',borough:'Lambeth',receivedDate:'03 Nov 2024',openFrom:'Dec 2024',openTo:'Mar 2025',status:'Registration Complete - No follow up required',adults:'3',children:'0',ages:'',phone:'07700 900205',email:'maya.f@email.com',circumstances:'Hours cut at work, temporary support.',notes:'Hours restored. Closed after 3 months.'},
+    {ref:'REF-0058',householdId:'HH-004',borough:'Lambeth',receivedDate:'20 Jan 2025',openFrom:'Feb 2025',openTo:'May 2025',status:'Registration Complete - No follow up required',adults:'1',children:'1',ages:'1F',phone:'07700 900208',email:'zara.m@email.com',circumstances:'Asylum seeker, no recourse to public funds.',notes:'Extended to 4 months. Referred to legal aid.'},
+    {ref:'REF-0071',householdId:'HH-005',borough:'Lambeth',receivedDate:'15 Mar 2025',openFrom:'Apr 2025',openTo:'Jul 2025',status:'Registration Complete - No follow up required',adults:'2',children:'0',ages:'',phone:'07700 900211',email:'audrey.w@email.com',circumstances:'Disability-related benefit gap.',notes:'PIP awarded month 2. Closed after 3 months.'},
+    {ref:'REF-0089',householdId:'HH-006',borough:'Croydon',receivedDate:'03 Sep 2025',openFrom:'Oct 2025',openTo:'Jan 2026',status:'Registration Complete - WB follow up required [complex]',adults:'2',children:'2',ages:'12M,2M',phone:'07700 900206',email:'carlos.g@email.com',circumstances:'DV situation emerged. Complex MH needs flagged.',notes:'Safeguarding referral made. Case closed after 4 months.'},
+    {ref:'REF-0095',householdId:'HH-007',borough:'Lambeth',receivedDate:'11 Jan 2025',openFrom:'Jan 2025',openTo:'Apr 2025',status:'Registration Complete - No follow up required',adults:'2',children:'2',ages:'8F,10M',phone:'07700 900240',email:'ethan.h@email.com',circumstances:'Job loss, short-term food crisis.',notes:'Resolved within standard 3-month cycle.'}
+  ],
+  households:[
+    {id:'HH-001',name:'Chowdhury',primaryName:'Tariq Chowdhury',phone:'07700 900201',email:'tariq.c@email.com',postcode:'SW9 7QD',borough:'Lambeth',adults:'3',children:'0',ages:'',linkedRefs:['REF-0012','REF-0201'],created:'14 Feb 2024'},
+    {id:'HH-002',name:'Owens',primaryName:'Adam Owens',phone:'07700 900202',email:'adam.o@email.com',postcode:'SE11 4AU',borough:'Lambeth',adults:'3',children:'0',ages:'',linkedRefs:['REF-0030','REF-0202'],created:'10 Aug 2024'},
+    {id:'HH-003',name:'Frederick',primaryName:'Maya Frederick',phone:'07700 900205',email:'maya.f@email.com',postcode:'SW2 1JF',borough:'Lambeth',adults:'3',children:'0',ages:'',linkedRefs:['REF-0045','REF-0205'],created:'03 Nov 2024'},
+    {id:'HH-004',name:'Martin',primaryName:'Zara Martin',phone:'07700 900208',email:'zara.m@email.com',postcode:'SW9 8PS',borough:'Lambeth',adults:'1',children:'1',ages:'2F',linkedRefs:['REF-0058','REF-0208'],created:'20 Jan 2025'},
+    {id:'HH-005',name:'Wagner',primaryName:'Audrey Wagner',phone:'07700 900211',email:'audrey.w@email.com',postcode:'SE5 0TF',borough:'Lambeth',adults:'2',children:'0',ages:'',linkedRefs:['REF-0071','REF-0211'],created:'15 Mar 2025'},
+    {id:'HH-006',name:'Gupta',primaryName:'Carlos Gupta',phone:'07700 900206',email:'carlos.g@email.com',postcode:'CR0 2AJ',borough:'Croydon',adults:'3',children:'2',ages:'14M,2M',linkedRefs:['REF-0089','REF-0206'],created:'03 Sep 2025'},
+    {id:'HH-007',name:'Huber',primaryName:'Ethan Huber',phone:'07700 900240',email:'ethan.h@email.com',postcode:'SW4 6DH',borough:'Lambeth',adults:'3',children:'3',ages:'10F,12M,12M',linkedRefs:['REF-0095','REF-0240'],created:'11 Jan 2025'}
   ]
 };
 
 /* ── STATE ── */
 var DATA={}, WB_UNLOCKED=false;
-var STATE={view:'dashboard',dashTab:0,weekOffset:0,selectedDay:new Date().toISOString().slice(0,10),actionSort:'date',actionSortDir:'asc',actionVolFilter:'All',allRefSort:'name',allRefSortDir:'asc',allRefBorough:'all',ref:null,step:1,wtab:1,regTab:0,wbTab:0,wbRef:null,wbMainTab:0,wbSearch:'',benSearch:'',benFilter:'all',benBorough:'all',allRefSearch:'',allRefFilter:'all',newRefSearch:'',taskFilter:'All',openArea:null,regSearch:'',volFilter:'All',wbNoteText:'',wbNoteCat:'General',wbNoteAuthor:'',wbNoteTopic:'',wbMeetingDate:'',wbAgenda:'',flagEditorOpen:null,tabsVisited:{}};
+var STATE={view:'dashboard',dashTab:0,weekOffset:0,selectedDay:new Date().toISOString().slice(0,10),actionSort:'date',actionSortDir:'asc',actionVolFilter:'All',hhSearchOpen:false,hhSearchQuery:'',hhSearchSelected:null,allRefSort:'name',allRefSortDir:'asc',allRefBorough:'all',ref:null,step:1,wtab:1,regTab:0,wbTab:0,wbRef:null,wbMainTab:0,wbSearch:'',benSearch:'',benFilter:'all',benBorough:'all',allRefSearch:'',allRefFilter:'all',newRefSearch:'',taskFilter:'All',openArea:null,regSearch:'',volFilter:'All',wbNoteText:'',wbNoteCat:'General',wbNoteAuthor:'',wbNoteTopic:'',wbMeetingDate:'',wbAgenda:'',flagEditorOpen:null,tabsVisited:{}};
 var hasGAS=(typeof google!=='undefined'&&google.script&&google.script.run);
 
 /* ── HELPERS ── */
@@ -266,6 +278,64 @@ function renderBreadcrumb(links,current){
   });
   h+='<span class="current">'+esc(current)+'</span></nav>';
   return h;
+}
+/* ── Household helpers ── */
+var HH_ADMIN_PW='OBAadmin2026';
+function getHousehold(id){return(DATA.households||[]).find(function(h){return h.id===id;});}
+function getHouseholdForRef(ref){return(DATA.households||[]).find(function(h){return h.linkedRefs&&h.linkedRefs.indexOf(ref)>=0;});}
+function searchHouseholds(query){
+  if(!query||query.length<2)return[];
+  var q=query.toLowerCase();
+  var results=[];
+  /* Search households */
+  (DATA.households||[]).forEach(function(hh){
+    var hay=(hh.name+' '+hh.primaryName+' '+hh.phone+' '+hh.email+' '+(hh.postcode||'')+' '+hh.linkedRefs.join(' ')).toLowerCase();
+    if(hay.indexOf(q)>=0)results.push({type:'household',data:hh});
+  });
+  /* Search historical referrals not yet in a household */
+  (DATA.historicalReferrals||[]).forEach(function(hr){
+    var hay=(hr.ref+' '+(hr.householdId||'')+' '+hr.email+' '+hr.phone).toLowerCase();
+    if(hay.indexOf(q)>=0&&!results.find(function(r){return r.type==='household'&&r.data.id===hr.householdId;})){
+      var hh=getHousehold(hr.householdId);
+      if(hh&&!results.find(function(r){return r.data.id===hh.id;}))results.push({type:'household',data:hh});
+    }
+  });
+  return results;
+}
+function createHousehold(ref){
+  var r=getRef(ref);if(!r)return;
+  DATA.households=DATA.households||[];
+  var id='HH-'+String(DATA.households.length+1).padStart(3,'0');
+  var surname=(r.name||'').split(' ').pop();
+  DATA.households.push({id:id,name:surname,primaryName:r.name,phone:r.phone,email:r.email,postcode:'',borough:r.borough,adults:r.adults,children:r.children,ages:r.ages,linkedRefs:[ref],created:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})});
+  r.householdId=id;
+  toast('Household '+id+' created for '+r.name);render();
+}
+function linkToHousehold(ref,hhId){
+  var r=getRef(ref);if(!r)return;
+  var hh=getHousehold(hhId);if(!hh)return;
+  if(hh.linkedRefs.indexOf(ref)<0)hh.linkedRefs.push(ref);
+  r.householdId=hhId;
+  toast('Linked '+ref+' to household '+hh.primaryName);render();
+}
+function separateFromHousehold(ref,pw){
+  if(pw!==HH_ADMIN_PW){toast('Incorrect password');return;}
+  var r=getRef(ref);if(!r||!r.householdId)return;
+  var hh=getHousehold(r.householdId);
+  if(hh){hh.linkedRefs=hh.linkedRefs.filter(function(x){return x!==ref;});}
+  createHousehold(ref);
+  toast('Separated '+ref+' into new household');
+}
+function mergeHouseholds(fromId,toId,pw){
+  if(pw!==HH_ADMIN_PW){toast('Incorrect password');return;}
+  var from=getHousehold(fromId),to=getHousehold(toId);
+  if(!from||!to)return;
+  from.linkedRefs.forEach(function(ref){
+    if(to.linkedRefs.indexOf(ref)<0)to.linkedRefs.push(ref);
+    var r=getRef(ref);if(r)r.householdId=to.id;
+  });
+  DATA.households=DATA.households.filter(function(h){return h.id!==fromId;});
+  toast('Merged '+from.primaryName+' into '+to.primaryName);render();
 }
 function markCollection(ref,status){
   var cols=DATA.collections||[];
