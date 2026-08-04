@@ -158,11 +158,11 @@ function renderAllReferrals(){
   var f=STATE.allRefFilter||'all';
   var allCount=refs.length;
   var activeCount=refs.filter(function(r){return COMPLETE_STATUSES.indexOf(r.status)>=0;}).length;
-  var pendingCount=refs.filter(function(r){return APPT_PENDING.indexOf(r.status)>=0||NEW_STATUSES.indexOf(r.status)>=0;}).length;
+  var pendingCount=refs.filter(function(r){return REFERRAL_STATUSES.indexOf(r.status)>=0;}).length;
   var shown=refs.filter(function(r){
     if(q){var hay=(r.ref+' '+r.name+' '+r.phone+' '+r.email+' '+r.borough).toLowerCase();if(hay.indexOf(q)<0)return false;}
     if(f==='active')return COMPLETE_STATUSES.indexOf(r.status)>=0;
-    if(f==='pending')return APPT_PENDING.indexOf(r.status)>=0||NEW_STATUSES.indexOf(r.status)>=0;
+    if(f==='pending')return REFERRAL_STATUSES.indexOf(r.status)>=0;
     return true;
   });
   var h='<div class="eyebrow">Referral Management</div><div class="head-row"><div><h1>All Referrals</h1><p style="color:var(--muted);margin-top:4px">Click on a referral to view more details.</p></div>';

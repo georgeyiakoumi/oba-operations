@@ -195,10 +195,16 @@ function fmtDate(s){
   var yr=m[3]||new Date().getFullYear();
   return day+'/'+mon+'/'+yr;
 }
-function isFinalMonth(r){return r.openTo&&r.openTo===MONTHS[new Date().getMonth()]&&COMPLETE_STATUSES.indexOf(r.status)>=0;}
+function isFinalMonth(r){return r.openTo&&r.openTo===MONTHS[new Date().getMonth()]&&BENEFICIARY_STATUSES.indexOf(r.status)>=0;}
 function statusPill(r){var m=statusMeta(r.status);return '<span class="status-pill '+m.tone+'"><span class="dot"></span>'+esc(r.status)+'</span>';}
-function benCat(r){if(CLOSED_STATUSES.indexOf(r.status)>=0)return 'closed';if(COMPLETE_STATUSES.indexOf(r.status)>=0)return 'open';return 'awaiting';}
-function isNewRef(r){return NEW_STATUSES.indexOf(r.status)>=0||r.status==='Referral received';}
+function benCat(r){if(CLOSED_STATUSES.indexOf(r.status)>=0)return 'closed';if(BENEFICIARY_STATUSES.indexOf(r.status)>=0)return 'open';return 'awaiting';}
+/* Status check helpers */
+function isNewRef(r){return NEW_STATUSES.indexOf(r.status)>=0;}
+function isReferral(r){return REFERRAL_STATUSES.indexOf(r.status)>=0;}
+function isRegAppt(r){return REG_APPOINTMENT_STATUSES.indexOf(r.status)>=0;}
+function isWaitingList(r){return WAITING_LIST_STATUSES.indexOf(r.status)>=0;}
+function isBeneficiary(r){return BENEFICIARY_STATUSES.indexOf(r.status)>=0;}
+function isClosed(r){return CLOSED_STATUSES.indexOf(r.status)>=0;}
 function deepSet(o,path,v){var p=path.split('.'),c=o;for(var i=0;i<p.length-1;i++){if(!c[p[i]])c[p[i]]={};c=c[p[i]];}c[p[p.length-1]]=v;}
 function parseChildAges(agesStr){
   if(!agesStr)return[];
