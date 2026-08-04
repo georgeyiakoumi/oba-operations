@@ -237,5 +237,20 @@ function parseChildAges(agesStr){
   if(!agesStr)return[];
   return String(agesStr).split(',').map(function(s){s=s.trim();var m=s.match(/^(\d+)([MFmf]?)$/);return m?{age:m[1],gender:m[2].toUpperCase()||''}:{age:s,gender:''};});
 }
+function formatChildren(children,agesStr){
+  var count=parseInt(children)||0;
+  if(count===0)return 'None';
+  var parsed=parseChildAges(agesStr);
+  if(!parsed.length)return count+'';
+  return parsed.map(function(c){
+    var label=c.gender==='M'?'Boy':c.gender==='F'?'Girl':'Child';
+    return label+' ('+c.age+')';
+  }).join(', ');
+}
+function calcDistGroup(regDate){
+  if(!regDate)return '—';
+  var d=parseInt(regDate)||0;
+  return d>=1&&d<=14?'Group 1':'Group 2';
+}
 console.log('OBA config+data loaded');
 </script>
