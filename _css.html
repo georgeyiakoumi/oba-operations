@@ -457,6 +457,18 @@ select.filter-sel {
 .rtable tbody tr { cursor: pointer }
 .rtable tbody tr:hover { background: var(--hover) }
 
+.rtable th.sortable { cursor: pointer; user-select: none }
+.rtable th.sortable:hover { color: var(--green) }
+.rtable th .sort-arrow { font-size: 10px; margin-left: 3px; color: var(--faint) }
+.rtable th.sorted .sort-arrow { color: var(--green) }
+
+.filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center }
+.toggle-group { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden }
+.toggle-group button { background: var(--card); border: 0; border-right: 1px solid var(--line); padding: 7px 14px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap }
+.toggle-group button:last-child { border-right: 0 }
+.toggle-group button:hover { background: var(--hover) }
+.toggle-group button.on { background: var(--green); color: #fff }
+
 .r-ref { font-family: var(--font-mono); font-size: 13px; color: var(--green-bright); font-weight: 500 }
 .r-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap }
 .r-muted { color: var(--muted); font-size: 13px }

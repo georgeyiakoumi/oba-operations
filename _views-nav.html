@@ -273,38 +273,95 @@ function renderDashActions(refs,todayStr){
 /* ══════════════════════════════════════════════════════
    ALL REFERRALS  (search + filter)
 ══════════════════════════════════════════════════════ */
+function toggleSort(col){
+  if(STATE.allRefSort===col){STATE.allRefSortDir=STATE.allRefSortDir==='asc'?'desc':'asc';}
+  else{STATE.allRefSort=col;STATE.allRefSortDir='asc';}
+  render();
+}
+function sortHeader(col,label){
+  var active=STATE.allRefSort===col;
+  var arrow=active?(STATE.allRefSortDir==='asc'?'↑':'↓'):'↕';
+  return '<th class="sortable'+(active?' sorted':'')+'" onclick="toggleSort(\''+col+'\')">'+label+'<span class="sort-arrow">'+arrow+'</span></th>';
+}
 function renderAllReferrals(){
   var refs=DATA.referrals||[];
   var q=(STATE.allRefSearch||'').toLowerCase();
   var f=STATE.allRefFilter||'all';
+  var bor=STATE.allRefBorough||'all';
+
+  /* Counts per filter */
   var allCount=refs.length;
-  var activeCount=refs.filter(function(r){return COMPLETE_STATUSES.indexOf(r.status)>=0;}).length;
-  var pendingCount=refs.filter(function(r){return REFERRAL_STATUSES.indexOf(r.status)>=0;}).length;
+  var triageCount=refs.filter(isNewRef).length;
+  var inProgCount=refs.filter(isRegAppt).length;
+  var waitCount=refs.filter(isWaitingList).length;
+  var benCount=refs.filter(isBeneficiary).length;
+  var closedCount=refs.filter(isClosed).length;
+
+  /* Filter */
   var shown=refs.filter(function(r){
-    if(q){var hay=(r.ref+' '+r.name+' '+r.phone+' '+r.email+' '+r.borough).toLowerCase();if(hay.indexOf(q)<0)return false;}
-    if(f==='active')return COMPLETE_STATUSES.indexOf(r.status)>=0;
-    if(f==='pending')return REFERRAL_STATUSES.indexOf(r.status)>=0;
+    if(q){var hay=(r.ref+' '+r.name+' '+r.phone+' '+r.email+' '+r.borough+' '+r.status).toLowerCase();if(hay.indexOf(q)<0)return false;}
+    if(bor!=='all'&&r.borough!==bor)return false;
+    if(f==='triage')return isNewRef(r);
+    if(f==='inProgress')return isRegAppt(r);
+    if(f==='waitingList')return isWaitingList(r);
+    if(f==='beneficiary')return isBeneficiary(r);
+    if(f==='closed')return isClosed(r);
     return true;
   });
-  var h='<div class="eyebrow">Referral Management</div><div class="head-row"><div><h1>All Referrals</h1><p style="color:var(--muted);margin-top:4px">Click on a referral to view more details.</p></div>';
+
+  /* Sort */
+  var sc=STATE.allRefSort||'name';
+  var sd=STATE.allRefSortDir==='desc'?-1:1;
+  shown.sort(function(a,b){
+    var va,vb;
+    if(sc==='ref'){va=a.ref;vb=b.ref;}
+    else if(sc==='name'){va=(a.name||'').toLowerCase();vb=(b.name||'').toLowerCase();}
+    else if(sc==='borough'){va=a.borough||'';vb=b.borough||'';}
+    else if(sc==='type'){va=a.type||'';vb=b.type||'';}
+    else if(sc==='date'){va=a.receivedDate||'';vb=b.receivedDate||'';}
+    else if(sc==='status'){va=a.status||'';vb=b.status||'';}
+    else{va='';vb='';}
+    if(va<vb)return -1*sd;if(va>vb)return sd;return 0;
+  });
+
+  /* Header */
+  var h='<div class="eyebrow">Referral Management</div><div class="head-row"><div><h1>All Referrals</h1><p style="color:var(--muted);margin-top:4px">'+shown.length+' of '+allCount+' referrals</p></div>';
   h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name, ref, phone, email, borough…" value="'+esc(STATE.allRefSearch||'')+'" oninput="STATE.allRefSearch=this.value;render()"></div></div>';
-  h+='<div class="filter-strip">';
-  h+='<button class="fchip'+(f==='all'?' on':'')+'" onclick="STATE.allRefFilter=\'all\';render()">All <span style="font-size:11px;opacity:.7">'+allCount+'</span></button>';
-  h+='<button class="fchip'+(f==='active'?' on':'')+'" onclick="STATE.allRefFilter=\'active\';render()">Active Beneficiaries <span style="font-size:11px;opacity:.7">'+activeCount+'</span></button>';
-  h+='<button class="fchip fchip-orange'+(f==='pending'?' on':'')+'" onclick="STATE.allRefFilter=\'pending\';render()">Pending <span style="font-size:11px;opacity:.7">'+pendingCount+'</span></button>';
+
+  /* ToggleGroup filter + borough select */
+  h+='<div class="filter-bar">';
+  h+='<div class="toggle-group">';
+  var filters=[['all','All',allCount],['triage','Awaiting Triage',triageCount],['inProgress','In Progress',inProgCount],['waitingList','Waiting List',waitCount],['beneficiary','Beneficiaries',benCount],['closed','Closed',closedCount]];
+  filters.forEach(function(fi){
+    h+='<button class="'+(f===fi[0]?'on':'')+'" onclick="STATE.allRefFilter=\''+fi[0]+'\';render()">'+fi[1]+' <span style="font-size:11px;opacity:.7">'+fi[2]+'</span></button>';
+  });
   h+='</div>';
-  if(!shown.length){h+='<div class="card placeholder">No referrals match.</div>';return h;}
-  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref #</th><th>Name</th><th>Borough</th><th>Type</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+  h+='<select class="filter-sel" onchange="STATE.allRefBorough=this.value;render()"><option value="all">All boroughs</option>';
+  ['Lambeth','Southwark','Wandsworth','Croydon'].forEach(function(b){h+='<option value="'+b+'"'+(bor===b?' selected':'')+'>'+b+'</option>';});
+  h+='</select>';
+  h+='</div>';
+
+  if(!shown.length){h+='<div class="card placeholder">No referrals match your filters.</div>';return h;}
+
+  /* Table with sortable headers */
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr>';
+  h+=sortHeader('ref','Ref');
+  h+=sortHeader('name','Name');
+  h+=sortHeader('borough','Borough');
+  h+=sortHeader('type','Type');
+  h+=sortHeader('date','Received');
+  h+=sortHeader('status','Status');
+  h+='</tr></thead><tbody>';
   shown.forEach(function(r){
     var flagged=r.flags&&(r.flags.indexOf('overdue')>=0||r.flags.indexOf('urgent')>=0);
     var isDna=r.status==='Did not attend (DNA) registration';
     var rowClass=(flagged?'flag-row':'')+(isDna?' dna-table-row':'');
     var refNum=r.ref.replace('REF-','');
     h+='<tr class="'+rowClass.trim()+'" onclick="go(\'detail\',\''+r.ref+'\')">';
-    h+='<td class="r-ref" style="font-family:\'IBM Plex Mono\';font-size:13px">'+esc(refNum)+'</td>';
-    h+='<td><span class="r-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+(flagged?' '+ic('warn',14):'')+'</span></td>';
+    h+='<td class="r-ref">'+esc(refNum)+'</td>';
+    h+='<td><span class="r-name">'+renderFlags(r,{showEmerg:true})+esc(r.name)+(flagged?' '+ic('warn',14):'')+'</span></td>';
     h+='<td class="r-muted">'+esc(r.borough)+'</td>';
-    h+='<td class="r-muted" style="font-family:\'IBM Plex Mono\';font-size:12px">'+esc(r.type)+'</td>';
+    h+='<td class="r-muted" style="font-family:var(--font-mono);font-size:12px">'+esc(r.type)+'</td>';
     h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td>';
     h+='<td>'+statusPill(r)+'</td></tr>';
   });
