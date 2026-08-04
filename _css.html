@@ -1364,6 +1364,23 @@ select.filter-sel {
 .coll-row.status-dna .coll-btns .coll-btn { opacity: .4; pointer-events: none }
 .coll-row.status-dna .coll-btns .coll-btn-dna { opacity: 1; pointer-events: auto }
 
+/* Household search panel */
+.hh-search-panel { border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin-top: 14px; background: #fafaf7 }
+.hh-search-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px }
+@media (max-width: 900px) { .hh-search-grid { grid-template-columns: 1fr } }
+.hh-search-grid input { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: 14px }
+.hh-search-grid input:focus { outline: none; border-color: var(--green) }
+.hh-result { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 8px; cursor: pointer; background: var(--card) }
+.hh-result:hover { border-color: var(--green); background: var(--hover) }
+.hh-result.selected { border-color: var(--green); border-width: 2px; background: var(--green-chip-bg) }
+.hh-result .hh-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--green-chip-bg); color: var(--green-deep); display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0 }
+.hh-result .hh-info { flex: 1; min-width: 0 }
+.hh-result .hh-name { font-weight: 600; font-size: 14px }
+.hh-result .hh-meta { font-size: 12px; color: var(--muted); margin-top: 2px }
+.hh-linked-badge { background: var(--green-chip-bg); color: var(--green-chip-tx); font-family: var(--font-mono); font-size: 10px; padding: 2px 7px; border-radius: 5px }
+.hh-admin-input { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px }
+.hh-admin-input input { width: 160px; background: var(--card); border: 1px solid var(--line); border-radius: 7px; padding: 7px 10px; font-size: 13px }
+
 /* ── BOROUGH BREAKDOWN ── */
 
 .bor-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px }
