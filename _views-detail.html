@@ -285,7 +285,7 @@ function sendForOnlineRegUI(ref){
 }
 function renderOnlinePending(){
   var refs=(DATA.referrals||[]).filter(function(r){return r.status==='Pending online registration appointment';});
-  var h='<div class="eyebrow">Registrations</div><h1>Online Registrations Pending</h1>';
+  var h='<h1>Online Registrations Pending</h1>';
   h+='<p style="color:var(--muted);margin-bottom:18px">Applicants who need their registration completed online. Contact each to arrange their appointment.</p>';
   if(!refs.length)return h+'<div class="card placeholder"><div class="pic">'+ic('video',32)+'</div><b>No online registrations pending</b></div>';
   h+='<div class="card">';
