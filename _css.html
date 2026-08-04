@@ -1308,6 +1308,43 @@ select.filter-sel {
 .dna-row:first-child { border-top: 0 }
 
 
+/* ── OVERVIEW STATS (donut + threshold) ── */
+.overview-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px }
+@media (max-width: 900px) { .overview-stats { grid-template-columns: 1fr } }
+
+/* Donut chart card */
+.donut-card { display: flex; flex-direction: column; align-items: center; padding: 24px 20px }
+.donut-wrap { position: relative; width: 180px; height: 180px; margin-bottom: 16px }
+.donut-wrap svg { width: 100%; height: 100% }
+.donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center }
+.donut-center .dc-num { font-family: var(--font-heading); font-weight: 700; font-size: 32px; color: var(--ink); line-height: 1 }
+.donut-center .dc-label { font-size: 12px; color: var(--muted); margin-top: 4px }
+.donut-legend { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center }
+.donut-legend .dl-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink) }
+.donut-legend .dl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0 }
+.donut-legend .dl-count { font-weight: 600 }
+
+/* Lambeth threshold card */
+.threshold-card { padding: 24px 20px }
+.threshold-card .th-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px }
+.threshold-card .th-title { font-weight: 600; font-size: 15px }
+.threshold-card .th-badge { font-family: var(--font-mono); font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 600 }
+.th-badge-met { background: var(--green-chip-bg); color: var(--green-chip-tx) }
+.th-badge-close { background: var(--orange-bg); color: var(--orange) }
+.th-badge-below { background: var(--red-bg); color: var(--red) }
+.threshold-card .th-pct { font-family: var(--font-heading); font-weight: 700; font-size: 42px; line-height: 1; margin-bottom: 4px }
+.threshold-card .th-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px }
+.th-bar-wrap { position: relative; height: 12px; background: var(--line-soft); border-radius: 6px; overflow: visible; margin-bottom: 8px }
+.th-bar-fill { height: 100%; border-radius: 6px; transition: width .3s }
+.th-bar-proj { height: 100%; border-radius: 6px; position: absolute; top: 0; opacity: .35 }
+.th-bar-marker { position: absolute; top: -4px; width: 2px; height: 20px; background: var(--ink); border-radius: 1px }
+.th-bar-label { font-family: var(--font-mono); font-size: 10px; color: var(--faint); margin-top: 4px }
+.threshold-card .th-inputs { display: flex; gap: 10px; margin-top: 14px }
+.threshold-card .th-inputs label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px }
+.threshold-card .th-inputs input { width: 80px; background: var(--cream); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; font-size: 14px; text-align: center }
+.threshold-card .th-inputs input:focus { outline: none; border-color: var(--green); background: var(--card) }
+.threshold-card .th-footer { font-size: 13px; color: var(--muted); margin-top: 12px }
+
 /* ── BOROUGH BREAKDOWN ── */
 
 .bor-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 4px }
