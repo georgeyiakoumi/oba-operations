@@ -205,6 +205,15 @@ function isRegAppt(r){return REG_APPOINTMENT_STATUSES.indexOf(r.status)>=0;}
 function isWaitingList(r){return WAITING_LIST_STATUSES.indexOf(r.status)>=0;}
 function isBeneficiary(r){return BENEFICIARY_STATUSES.indexOf(r.status)>=0;}
 function isClosed(r){return CLOSED_STATUSES.indexOf(r.status)>=0;}
+/* Breadcrumb: renderBreadcrumb([['Label','view'],['Label','view'],...], 'Current Page') */
+function renderBreadcrumb(links,current){
+  var h='<nav class="breadcrumb">';
+  links.forEach(function(l){
+    h+='<button onclick="go(\''+l[1]+'\')">'+esc(l[0])+'</button><span class="sep">›</span>';
+  });
+  h+='<span class="current">'+esc(current)+'</span></nav>';
+  return h;
+}
 function deepSet(o,path,v){var p=path.split('.'),c=o;for(var i=0;i<p.length-1;i++){if(!c[p[i]])c[p[i]]={};c=c[p[i]];}c[p[p.length-1]]=v;}
 function parseChildAges(agesStr){
   if(!agesStr)return[];

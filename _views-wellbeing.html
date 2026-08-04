@@ -17,7 +17,7 @@ function renderBeneFile(){
   var liveRefs=(DATA.referrals||[]).filter(function(x){return(x.name||'').toLowerCase().indexOf(surname)>=0;});
   var hist=(DATA.historicalReferrals||[]).filter(function(x){return(x.household||'').toLowerCase().indexOf(surname)>=0;});
   hist.sort(function(a,b){return(a.openFrom||'').localeCompare(b.openFrom||'');});
-  var h='<button class="back-link" onclick="STATE_benRef=null;render()">'+ic('back',16)+'Back to Beneficiaries</button>';
+  var h=renderBreadcrumb([['Beneficiaries','ben']],r.name);
   h+='<div class="card detail-head" style="margin-bottom:18px">';
   h+='<div class="dh-name">'+esc(r.name)+'</div>';
   h+='<div class="dh-meta">'+esc(r.borough)+' \xb7 '+hhWords(r)+(r.openFrom?' \xb7 Open '+monthsOpen(r):'')+'</div>';
@@ -367,7 +367,7 @@ function renderWbFile(r){
   /* open task count */
   var wf=getWelfare(r);var openTasks=0,doneTasks=0;
   Object.keys(wf.tasks||{}).forEach(function(area){(wf.tasks[area]||[]).forEach(function(tk){if(tk.status==='Completed')doneTasks++;else openTasks++;});});
-  var h='<button class="back-link" onclick="STATE.wbRef=null;render()">'+ic('back',16)+'All wellbeing cases</button>';
+  var h=renderBreadcrumb([['Wellbeing','wellbeing'],['All Cases','wellbeing']],r.name);
   /* summary card on top */
   h+='<div class="card wb-summary"><div class="wb-sum-name">'+esc(r.name.toUpperCase())+'</div>';
   h+='<div class="wb-sum-meta">';

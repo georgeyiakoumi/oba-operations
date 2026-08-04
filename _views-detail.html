@@ -7,7 +7,7 @@ function renderDetail(){
   var r=getRef(STATE.ref);if(!r)return renderAllReferrals();
   var flags=flagList(r);
   var opts=STATUSES.map(function(s){return'<option '+(s.label===r.status?'selected':'')+'>'+esc(s.label)+'</option>';}).join('');
-  var h='<button class="back-link" onclick="go(\'allReferrals\')">'+ic('back',16)+'Back to all referrals</button>';
+  var h=renderBreadcrumb([['Referrals','allReferrals']],r.ref+' — '+r.name);
   /* header */
   h+='<div class="card detail-head"><div class="head-row"><div>';
   h+='<div class="dh-eyebrow">'+esc(r.ref)+'</div>';
