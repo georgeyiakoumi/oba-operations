@@ -1,0 +1,208 @@
+<script>
+var MOCK={
+  boroughCounts:{Lambeth:42,Southwark:29,Wandsworth:38,Croydon:24},
+  referrals:[
+    {ref:'REF-0101',name:'Elizabeth Dickerson',borough:'Southwark',type:'STANDARD',receivedDate:'06 Jan',adults:'3',children:'1',ages:'7F',email:'elizabeth.d@email.com',phone:'07700 900101',status:'Active Beneficiary',flags:'',circumstances:'Settled into collection cycle.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Feb 2026',openTo:'Apr 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0102',name:'William Davis',borough:'Lambeth',type:'EMERGENCY',receivedDate:'12 Jan',adults:'2',children:'2',ages:'4M,9F',email:'w.davis@email.com',phone:'07700 900102',status:'Active Beneficiary',flags:'',circumstances:'Emergency parcel issued on day of referral.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Feb 2026',openTo:'Apr 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0103',name:'Miranda Knight',borough:'Southwark',type:'STANDARD',receivedDate:'18 Jan',adults:'1',children:'3',ages:'2F,6M,11M',email:'miranda.k@email.com',phone:'07700 900103',status:'Registration Complete - WB follow up required [complex]',flags:'complex,dv',circumstances:'Domestic violence history. Complex debt and MH needs.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Feb 2026',openTo:'May 2026',wbOfficer:'Sophie',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0104',name:'Cameron Young',borough:'Southwark',type:'STANDARD',receivedDate:'24 Jan',adults:'2',children:'0',ages:'',email:'cam.young@email.com',phone:'07700 900104',status:'Active Beneficiary',flags:'',circumstances:'Recently made redundant.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Feb 2026',openTo:'Apr 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0105',name:'Dean Burch',borough:'Wandsworth',type:'STANDARD',receivedDate:'30 Jan',adults:'1',children:'1',ages:'5M',email:'d.burch@email.com',phone:'07700 900105',status:'Appointment offered/booking link sent',flags:'',circumstances:'Single parent, awaiting appointment.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'Despina',apptDate:relToday(),apptTime:'09:30',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0106',name:'Edward Frederick',borough:'Croydon',type:'STANDARD',receivedDate:'05 Feb',adults:'2',children:'1',ages:'3F',email:'e.fred@email.com',phone:'07700 900106',status:'Close file due to non-engagement',flags:'',circumstances:'No response after 3 contact attempts.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0107',name:'Jennifer Mclaughlin',borough:'Southwark',type:'EMERGENCY',receivedDate:'11 Feb',adults:'2',children:'2',ages:'1F,4M',email:'j.mclaughlin@email.com',phone:'07700 900107',status:'Registration Complete - No follow up required',flags:'',circumstances:'Fleeing domestic violence, emergency support.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Mar 2026',openTo:'May 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0108',name:'James Coffey',borough:'Wandsworth',type:'STANDARD',receivedDate:'17 Feb',adults:'1',children:'0',ages:'',email:'j.coffey@email.com',phone:'07700 900108',status:'Close file due to non-engagement',flags:'',circumstances:'No contact after initial referral.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0109',name:'Daniel Cooper',borough:'Croydon',type:'STANDARD',receivedDate:'23 Feb',adults:'2',children:'1',ages:'8M',email:'d.cooper@email.com',phone:'07700 900109',status:'Registration Complete - No follow up required',flags:'',circumstances:'Benefit delays causing short-term crisis.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Mar 2026',openTo:'Jun 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0110',name:'Carlos Thompson',borough:'Lambeth',type:'STANDARD',receivedDate:'01 Mar',adults:'3',children:'2',ages:'6F,10M',email:'c.thompson@email.com',phone:'07700 900110',status:'Active Beneficiary',flags:'',circumstances:'Large household, UC awarded but insufficient.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Apr 2026',openTo:'Jun 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0111',name:'Mark Rodriguez',borough:'Lambeth',type:'STANDARD',receivedDate:'07 Mar',adults:'2',children:'3',ages:'2F,5M,9F',email:'m.rodriguez@email.com',phone:'07700 900111',status:'Appointment Rescheduled',flags:'interpreter',circumstances:'Rebooked after DNA.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:relMon(0),apptTime:'10:15',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0112',name:'James Church',borough:'Wandsworth',type:'EMERGENCY',receivedDate:'13 Mar',adults:'1',children:'2',ages:'3M,7F',email:'j.church@email.com',phone:'07700 900112',status:'Registration Complete - WB follow up required [complex]',flags:'complex,disability,interpreter',circumstances:'Chronic illness, benefit disruption, disability needs.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Apr 2026',openTo:MONTHS[new Date().getMonth()]+' 2026',wbOfficer:'Harley',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0113',name:'Audrey Scott',borough:'Wandsworth',type:'STANDARD',receivedDate:'19 Mar',adults:'2',children:'2',ages:'4F,8M',email:'a.scott@email.com',phone:'07700 900113',status:'Did not attend (DNA) registration',flags:'overdue',circumstances:'DNA at first appointment — no contact since. Second invite needed.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0114',name:'Matthew Alvarado',borough:'Croydon',type:'EMERGENCY',receivedDate:'25 Mar',adults:'2',children:'1',ages:'11F',email:'m.alvarado@email.com',phone:'07700 900114',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Crisis situation, complex MH and debt.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Apr 2026',openTo:MONTHS[new Date().getMonth()]+' 2026',wbOfficer:'Sophie',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0115',name:'Scott Butler',borough:'Southwark',type:'EMERGENCY',receivedDate:'31 Mar',adults:'1',children:'0',ages:'',email:'s.butler@email.com',phone:'07700 900115',status:'Close file due to non-engagement',flags:'',circumstances:'Unable to reach after DNA.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0116',name:'Paula Gray',borough:'Southwark',type:'EMERGENCY',receivedDate:'06 Apr',adults:'2',children:'1',ages:'6F',email:'p.gray@email.com',phone:'07700 900116',status:'Appointment offered/booking link sent',flags:'',circumstances:'Awaiting registration appointment.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'Sophie',apptDate:relToday(),apptTime:'11:00',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0117',name:'Claudia Huber',borough:'Southwark',type:'EMERGENCY',receivedDate:'12 Apr',adults:'2',children:'2',ages:'2M,5F',email:'c.huber@email.com',phone:'07700 900117',status:'Active Beneficiary',flags:'',circumstances:'Zero-hours contract, irregular income.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Jul 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0118',name:'William Zimmerman',borough:'Lambeth',type:'EMERGENCY',receivedDate:'18 Apr',adults:'3',children:'0',ages:'',email:'w.zimm@email.com',phone:'07700 900118',status:'Registration Complete - No follow up required',flags:'',circumstances:'Temporary job loss, now stable.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Jul 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0119',name:'Michelle Hunt',borough:'Southwark',type:'EMERGENCY',receivedDate:'24 Apr',adults:'2',children:'1',ages:'13M',email:'m.hunt@email.com',phone:'07700 900119',status:'Registration Complete - No follow up required',flags:'',circumstances:'Rent arrears, food crisis resolved.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Jul 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0120',name:'Steven Miller',borough:'Southwark',type:'STANDARD',receivedDate:'30 Apr',adults:'2',children:'3',ages:'1F,4M,8F',email:'s.miller@email.com',phone:'07700 900120',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Complex debt, benefits appeal in progress.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'May 2026',openTo:'Aug 2026',wbOfficer:'Sophie',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0121',name:'Patricia Schmidt',borough:'Southwark',type:'STANDARD',receivedDate:'06 May',adults:'1',children:'2',ages:'6F,9F',email:'p.schmidt@email.com',phone:'07700 900121',status:'Registration Complete - WB follow up required [complex]',flags:'complex,da',circumstances:'Mental health crisis, safeguarding concerns.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Aug 2026',wbOfficer:'Harley',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0122',name:'Leslie Martin',borough:'Wandsworth',type:'STANDARD',receivedDate:'12 May',adults:'2',children:'3',ages:'3M,7M,10F',email:'l.martin@email.com',phone:'07700 900122',status:'Active Beneficiary',flags:'',circumstances:'Family settled, picking up fortnightly.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Aug 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0123',name:'Lisa Wagner',borough:'Croydon',type:'EMERGENCY',receivedDate:'18 May',adults:'1',children:'1',ages:'4F',email:'l.wagner@email.com',phone:'07700 900123',status:'Active Beneficiary',flags:'',circumstances:'Single parent, domestic violence escaper.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0124',name:'Dylan Cruz',borough:'Lambeth',type:'STANDARD',receivedDate:'24 May',adults:'2',children:'0',ages:'',email:'d.cruz@email.com',phone:'07700 900124',status:'Active Beneficiary',flags:'',circumstances:'Both adults on zero-hours, hours cut.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0125',name:'Jesse Taylor',borough:'Southwark',type:'EMERGENCY',receivedDate:'30 May',adults:'2',children:'2',ages:'2M,6F',email:'j.taylor@email.com',phone:'07700 900125',status:'Registration Complete - No follow up required',flags:'',circumstances:'Short-term crisis resolved.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:MONTHS[new Date().getMonth()]+' 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0126',name:'Amber Smith',borough:'Southwark',type:'STANDARD',receivedDate:'05 Jun',adults:'2',children:'1',ages:'9M',email:'a.smith@email.com',phone:'07700 900126',status:'Active Beneficiary',flags:'',circumstances:'Benefits delayed after move.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0127',name:'Melissa Owens',borough:'Wandsworth',type:'STANDARD',receivedDate:'11 Jun',adults:'1',children:'2',ages:'5F,8M',email:'m.owens@email.com',phone:'07700 900127',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Complex debt, SHINE referral in progress.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jun 2026',openTo:'Sep 2026',wbOfficer:'Harley',distributionGroup:'Group 1',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0128',name:'Nicholas Molina',borough:'Croydon',type:'EMERGENCY',receivedDate:'17 Jun',adults:'3',children:'1',ages:'12M',email:'n.molina@email.com',phone:'07700 900128',status:'Registration Complete - No follow up required',flags:'',circumstances:'Crisis resolved, regular collection.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jul 2026',openTo:'Sep 2026',wbOfficer:'',distributionGroup:'Group 2',distributionType:'Collection',welfareJson:'',notes:''},
+    {ref:'REF-0129',name:'Mark Flores',borough:'Lambeth',type:'EMERGENCY',receivedDate:'23 Jun',adults:'4',children:'3',ages:'3F,6M,9M',email:'m.flores@email.com',phone:'07700 900129',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Large family, complex safeguarding referral.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jul 2026',openTo:'Oct 2026',wbOfficer:'Sophie',distributionGroup:'Group 2',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0130',name:'Brenda Barton',borough:'Southwark',type:'EMERGENCY',receivedDate:'29 Jun',adults:'2',children:'2',ages:'1M,4F',email:'b.barton@email.com',phone:'07700 900130',status:'Registration Complete - WB follow up required [complex]',flags:'complex',circumstances:'Mental health crisis, infant in household.',triagePrev:'accept',triageBorough:'accept',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'Jul 2026',openTo:'Oct 2026',wbOfficer:'Sophie',distributionGroup:'Group 1',distributionType:'Delivery',welfareJson:'',notes:''},
+    {ref:'REF-0131',name:'Amara Okonkwo',borough:'Lambeth',type:'STANDARD',receivedDate:'01 Jul',adults:'2',children:'3',ages:'4M,7F,11M',email:'amara.ok@email.com',phone:'07700 900131',status:'Referral received',flags:'',circumstances:'Lost job last month, waiting on first UC payment. Children have school meal support but nothing for weekends.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0132',name:'Deniz Yilmaz',borough:'Wandsworth',type:'EMERGENCY',receivedDate:'03 Jul',adults:'1',children:'1',ages:'2M',email:'deniz.y@email.com',phone:'07700 900132',status:'Referral received',flags:'',circumstances:'Fled temporary accommodation, arrived with very little. Emergency parcel needed this week.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0133',name:'Grace Mensah',borough:'Southwark',type:'STANDARD',receivedDate:'06 Jul',adults:'2',children:'0',ages:'',email:'grace.m@email.com',phone:'07700 900133',status:'Referral received',flags:'',circumstances:'Both adults on zero-hours contracts, hours cut sharply. Struggling with rising bills.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0134',name:'Ivan Petrov',borough:'Croydon',type:'STANDARD',receivedDate:'09 Jul',adults:'1',children:'2',ages:'5M,9F',email:'ivan.p@email.com',phone:'07700 900134',status:'Referral received',flags:'',circumstances:'Single parent, recently signed off work sick. GP letter to follow.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''},
+    {ref:'REF-0135',name:'Fatima Al-Rashid',borough:'Lambeth',type:'EMERGENCY',receivedDate:'10 Jul',adults:'3',children:'4',ages:'1F,3M,8F,13M',email:'fatima.ar@email.com',phone:'07700 900135',status:'Referral received',flags:'',circumstances:'Large household, main earner hospitalised. Needs urgent support and likely ongoing.',triagePrev:'',triageBorough:'',apptType:'in-person',apptSlot:'',apptDate:'',apptTime:'',openFrom:'',openTo:'',wbOfficer:'',distributionGroup:'',distributionType:'',welfareJson:'',notes:''}
+  ],
+  notes:[
+    {noteId:'N-1',ref:'REF-0103',date:relDate(-9),author:'Sophie',category:'Safeguarding',duration:'25',text:'Initial disclosure of domestic violence during registration. Did not record perpetrator details per data-privacy rule. Agreed a safety plan and shared Refuge + National DV Helpline numbers. Escalated to senior staff same day.'},
+    {noteId:'N-2',ref:'REF-0103',date:relDate(-4),author:'Sophie',category:'Benefits',duration:'15',text:'Reviewed UC journal. Household likely missing the disability element — referred to Income Max CIC for a full benefits check. Beneficiary informed and consented.'},
+    {noteId:'N-3',ref:'REF-0112',date:relDate(-6),author:'Harley',category:'Debt',duration:'20',text:'Mapped rent arrears and two credit-card debts. Warm referral made to SHINE. Homework set: bring last three months of bank statements to next session.'},
+    {noteId:'N-4',ref:'REF-0114',date:relDate(-2),author:'Sophie',category:'Medical',duration:'10',text:'Chronic illness limits ability to collect — switched to delivery. Chasing doctor letter to confirm for UC journal.'}
+  ],
+  actions:[
+    {actionId:'A-1',ref:'REF-0103',name:'Miranda Knight',action:'Call beneficiary re: DV disclosure — safety check',dueBy:relDate(-1),officer:'Sophie',priority:'urgent',status:'open'},
+    {actionId:'A-2',ref:'REF-0103',name:'Miranda Knight',action:'Chase Income Max CIC on disability benefits check',dueBy:relDate(5),officer:'Sophie',priority:'pending',status:'open'},
+    {actionId:'A-3',ref:'REF-0112',name:'James Church',action:'Follow up with SHINE on debt referral outcome',dueBy:relDate(3),officer:'Harley',priority:'pending',status:'open'},
+    {actionId:'A-4',ref:'REF-0114',name:'Matthew Alvarado',action:'Book month-2 extension review (needs two staff to agree)',dueBy:relDate(1),officer:'Sophie',priority:'urgent',status:'open'}
+  ],
+  historicalReferrals:[
+    {ref:'REF-0012',household:'Miranda Knight',borough:'Southwark',receivedDate:'14 Feb 2024',openFrom:'Mar 2024',openTo:'Jun 2024',status:'Registration Complete - No follow up required',adults:'1',children:'3',ages:'2F,6M,11M',phone:'07700 900012',email:'miranda.k@email.com',circumstances:'Food crisis following benefit sanction. No complex needs at that time.',notes:'Closed after 3 months. No safeguarding concerns.'},
+    {ref:'REF-0058',household:'Miranda Knight',borough:'Southwark',receivedDate:'03 Sep 2025',openFrom:'Oct 2025',openTo:'Jan 2026',status:'Registration Complete - WB follow up required [complex]',adults:'1',children:'3',ages:'2F,6M,11M',phone:'07700 900058',email:'miranda.k@email.com',circumstances:'DV situation emerged. Complex MH needs flagged.',notes:'Safeguarding referral made. Case closed after 4 months with ongoing support plan.'},
+    {ref:'REF-0071',household:'James Church',borough:'Camden',receivedDate:'11 Jan 2025',openFrom:'Jan 2025',openTo:'Apr 2025',status:'Registration Complete - No follow up required',adults:'1',children:'2',ages:'3M,7F',phone:'07700 900071',email:'j.church@email.com',circumstances:'Job loss, short-term food crisis.',notes:'Resolved within standard 3-month cycle.'},
+    {ref:'REF-0089',household:'Melissa Owens',borough:'Hackney',receivedDate:'22 May 2025',openFrom:'Jun 2025',openTo:'Sep 2025',status:'Registration Complete - No follow up required',adults:'1',children:'2',ages:'5F,8M',phone:'07700 900089',email:'m.owens@email.com',circumstances:'Universal Credit delays, rent arrears.',notes:'Referred to SHINE during registration. Case closed after 3 months.'}
+  ]
+};
+
+/* ── STATE ── */
+var DATA={}, WB_UNLOCKED=false;
+var STATE={view:'today',ref:null,step:1,wtab:1,regTab:0,wbTab:0,wbRef:null,wbMainTab:0,wbSearch:'',benSearch:'',benFilter:'all',benBorough:'all',allRefSearch:'',allRefFilter:'all',newRefSearch:'',taskFilter:'All',openArea:null,regSearch:'',volFilter:'All',wbNoteText:'',wbNoteCat:'General',wbNoteAuthor:'',wbNoteTopic:'',wbMeetingDate:'',wbAgenda:'',flagEditorOpen:null,tabsVisited:{}};
+var hasGAS=(typeof google!=='undefined'&&google.script&&google.script.run);
+
+/* ── HELPERS ── */
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2600);}
+function getRef(id){return(DATA.referrals||[]).find(function(r){return r.ref===id;});}
+function hh(r){return(r.adults||'0')+'A · '+(r.children||'0')+'C';}
+function hhWords(r){var a=+r.adults||0,c=+r.children||0;return a+' adult'+(a===1?'':'s')+', '+c+' child'+(c===1?'':'ren');}
+function boroughBreakdown(){
+  var refs=DATA.referrals||[];
+  var CATCHMENT=['Lambeth','Southwark','Wandsworth','Croydon'];
+  var COLORS={Lambeth:'#557a16',Southwark:'#8d2b5f',Wandsworth:'#c06e14',Croydon:'#2a6a9a'};
+  var CLASSES={Lambeth:'lambeth',Southwark:'southwark',Wandsworth:'wandsworth',Croydon:'croydon'};
+  var LAMBETH_MIN=76; // 76% minimum Lambeth threshold per SOP
+
+  // Count all referrals in catchment (open to wellbeing = active/complete statuses, or all — use all for triage purposes)
+  var counts={};CATCHMENT.forEach(function(b){counts[b]=0;});
+  refs.forEach(function(r){if(counts[r.borough]!==undefined)counts[r.borough]++;});
+  var total=CATCHMENT.reduce(function(s,b){return s+(counts[b]||0);},0);
+  if(total===0)return'';
+
+  var lambethN=counts['Lambeth']||0;
+  var lambethPct=total?Math.round(lambethN/total*100):0;
+  var lambethOk=lambethPct>=LAMBETH_MIN;
+
+  // Max additional non-Lambeth before Lambeth % drops under threshold:
+  // lambethN / (total + X) >= 0.76  →  X <= lambethN/0.76 - total
+  var maxNonLambeth=Math.max(0,Math.floor(lambethN/(LAMBETH_MIN/100))-total);
+
+  // Provisional state (inputs stored in DATA.provCounts)
+  var prov=DATA.provCounts||{Lambeth:0,Southwark:0,Wandsworth:0,Croydon:0};
+  var provTotal=CATCHMENT.reduce(function(s,b){return s+(prov[b]||0);},0);
+  var provLambeth=(lambethN+(prov.Lambeth||0));
+  var provTotalAll=total+provTotal;
+  var provPct=provTotalAll?Math.round(provLambeth/provTotalAll*100):lambethPct;
+  var provOk=provPct>=LAMBETH_MIN;
+  var showProvisional=provTotal>0;
+
+  // ── Borough boxes ──
+  var h='<div>';
+  h+='<div class="bor-row">';
+  CATCHMENT.forEach(function(b){
+    var n=counts[b]||0;
+    var pct=total?Math.round(n/total*100):0;
+    var isLambeth=(b==='Lambeth');
+    var pctColor=isLambeth?(lambethOk?'var(--green)':'var(--red)'):COLORS[b];
+    h+='<div class="bor-box '+CLASSES[b]+'">';
+    h+='<div class="bor-label">'+b+'</div>';
+    h+='<div class="bor-count">'+n+' <span style="font-size:14px;font-weight:500;color:var(--muted)">referrals</span></div>';
+    h+='<div class="bor-pct" style="color:'+pctColor+'">'+pct+'%</div>';
+    if(isLambeth)h+='<div class="bor-sub '+(lambethOk?'bor-ok':'bor-warn')+'">'+(lambethOk?'✓ Above 76% threshold':'⚠ Below 76% threshold')+'</div>';
+    else h+='<div class="bor-sub">of all referrals</div>';
+    if(showProvisional&&(prov[b]||0)>0)h+='<div class="bor-sub" style="color:var(--green)">+'+prov[b]+' pending</div>';
+    h+='</div>';
+  });
+  h+='<div class="bor-box" style="border-color:var(--line-soft);background:var(--cream)">';
+  h+='<div class="bor-label">Total</div>';
+  h+='<div class="bor-count">'+total+'</div>';
+  h+='<div class="bor-pct" style="color:var(--muted);font-size:18px">referrals</div>';
+  if(showProvisional)h+='<div class="bor-sub" style="color:var(--green)">+'+provTotal+' pending</div>';
+  h+='</div>';
+  h+='</div>';
+
+  // ── Capacity box ──
+  h+='<div class="cap-box">';
+  h+='<div class="cap-title">Lambeth capacity rule — max '+LAMBETH_MIN+'% non-Lambeth</div>';
+  h+='<div class="cap-result '+(lambethOk?'ok':'warn')+'">';
+  if(lambethOk){
+    h+=ic('check',15)+' Lambeth is at '+lambethPct+'% — within threshold. ';
+    h+=maxNonLambeth===0?'Adding any non-Lambeth referral will breach 76%.':'You can accept up to <b>'+maxNonLambeth+' more non-Lambeth</b> referral'+(maxNonLambeth>1?'s':'')+" before Lambeth drops below 76%.";
+  }else{
+    h+=ic('warn',15)+' Lambeth is at '+lambethPct+'% — <b>below the 76% threshold</b>. Prioritise Lambeth referrals to restore balance.';
+  }
+  h+='</div>';
+
+  // ── Provisional calculator ──
+  h+='<details style="cursor:pointer"><summary style="font-size:13.5px;color:var(--green-deep);font-weight:500;user-select:none;padding:2px 0">'+ic('cal',14)+' Provisional: add pending registrations to see projected %</summary>';
+  h+='<p style="font-size:12.5px;color:var(--muted);margin:8px 0 6px">Enter how many people from each borough are completing registration this session:</p>';
+  h+='<div class="prov-grid">';
+  CATCHMENT.forEach(function(b){
+    h+='<div class="prov-inp"><label>'+b+'</label>';
+    h+='<input type="number" min="0" value="'+(prov[b]||0)+'" onchange="DATA.provCounts=DATA.provCounts||{};DATA.provCounts.'+b+'=parseInt(this.value)||0;render()">';
+    h+='</div>';
+  });
+  h+='</div>';
+  if(showProvisional){
+    var newMaxNL=Math.max(0,Math.floor(provLambeth/(LAMBETH_MIN/100))-provTotalAll);
+    h+='<div class="prov-result">';
+    h+='If all '+provTotal+' pending registrations complete: ';
+    h+='Lambeth would be <b style="color:'+(provOk?'var(--green)':'var(--red)')+'">'+provPct+'%</b> of '+provTotalAll+' total. ';
+    if(provOk){h+='<span style="color:var(--green)">✓ Still above threshold.</span> Could take up to '+newMaxNL+' more non-Lambeth.';}
+    else{h+='<span style="color:var(--red)">⚠ Would fall below 76%. Consider adding more Lambeth referrals.</span>';}
+    h+='</div>';
+  }
+  h+='</details>';
+  h+='</div>';
+  h+='</div>';
+  return h;
+}
+function flagList(r){return(r.flags||'').split(',').map(function(s){return s.trim();}).filter(Boolean);}
+function isComplex(r){return flagList(r).indexOf('complex')>=0;}
+/* Central flag renderer — call with (r, opts)
+   opts.showEmerg = true to include Emergency tag
+   opts.showFinal = true to include Final month tag
+   Returns HTML string of all applicable tags and dots */
+function renderFlags(r,opts){
+  opts=opts||{};
+  var flags=flagList(r);
+  var h='';
+  // Sensitive dot flags first (no readable label, tooltip only)
+  if(flags.indexOf('dv')>=0)  h+='<span class="flag-dot flag-dot-dv" data-tip="DV / DA — domestic violence" title="DV / DA — domestic violence"></span>';
+  if(flags.indexOf('da')>=0)  h+='<span class="flag-dot flag-dot-da" data-tip="D&A — drug & alcohol use" title="D&A — drug & alcohol use"></span>';
+  // Text tags
+  if(flags.indexOf('complex')>=0)    h+='<span class="flag-tag flag-complex">Complex</span>';
+  if(flags.indexOf('disability')>=0) h+='<span class="flag-tag flag-dis">DIS</span>';
+  if(flags.indexOf('interpreter')>=0)h+='<span class="flag-tag flag-int">INT</span>';
+  if(opts.showEmerg&&r.type==='EMERGENCY') h+='<span class="flag-tag flag-emerg">Emergency</span>';
+  if(opts.showFinal&&isFinalMonth(r)) h+='<span class="flag-tag flag-final">Final month</span>';
+  return h;
+}
+function getWelfare(r){if(!r._wf){try{r._wf=JSON.parse(r.welfareJson||'{}')||{};}catch(e){r._wf={};}if(!r._wf.tasks)r._wf.tasks={};}return r._wf;}
+function surnameFirst(r){return(r.name||'').toUpperCase();}
+function monthsOpen(r){if(r.openFrom&&r.openTo)return r.openFrom+'–'+r.openTo;return '—';}
+function fmtDate(s){
+  /* Convert stored date strings (e.g. "06 Jan", "06 Jan 2026") to dd/mm/yyyy */
+  if(!s)return '—';
+  var months={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  var m=s.match(/^(\d{1,2})\s+([A-Za-z]{3})(?:\s+(\d{4}))?$/);
+  if(!m)return s;
+  var day=m[1].padStart(2,'0');
+  var mon=months[m[2]]||'??';
+  var yr=m[3]||new Date().getFullYear();
+  return day+'/'+mon+'/'+yr;
+}
+function isFinalMonth(r){return r.openTo&&r.openTo===MONTHS[new Date().getMonth()]&&COMPLETE_STATUSES.indexOf(r.status)>=0;}
+function statusPill(r){var m=statusMeta(r.status);return '<span class="status-pill '+m.tone+'"><span class="dot"></span>'+esc(r.status)+'</span>';}
+function benCat(r){if(CLOSED_STATUSES.indexOf(r.status)>=0)return 'closed';if(COMPLETE_STATUSES.indexOf(r.status)>=0)return 'open';return 'awaiting';}
+function isNewRef(r){return NEW_STATUSES.indexOf(r.status)>=0||r.status==='Referral received';}
+function deepSet(o,path,v){var p=path.split('.'),c=o;for(var i=0;i<p.length-1;i++){if(!c[p[i]])c[p[i]]={};c=c[p[i]];}c[p[p.length-1]]=v;}
+function parseChildAges(agesStr){
+  if(!agesStr)return[];
+  return String(agesStr).split(',').map(function(s){s=s.trim();var m=s.match(/^(\d+)([MFmf]?)$/);return m?{age:m[1],gender:m[2].toUpperCase()||''}:{age:s,gender:''};});
+}
+console.log('OBA config+data loaded');
+</script>

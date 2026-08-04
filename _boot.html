@@ -1,0 +1,53 @@
+<script>
+function render(){
+  /* Save focused search input state so re-render doesn't break typing */
+  var activeSearch=null,selStart=0,selEnd=0;
+  var af=document.activeElement;
+  if(af&&af.tagName==='INPUT'&&af.closest&&af.closest('.searchbox')){
+    activeSearch=af.getAttribute('oninput')||'';
+    try{selStart=af.selectionStart;selEnd=af.selectionEnd;}catch(e){}
+  }
+  renderSidebar();
+  if(typeof lucide !== 'undefined') lucide.createIcons();
+  var h='',v=STATE.view;
+  if(v==='today')h=renderToday();
+  else if(v==='overview')h=renderOverview();
+  else if(v==='allReferrals')h=renderAllReferrals();
+  else if(v==='newReferrals')h=renderNewReferrals();
+  else if(v==='registrations')h=renderRegistrations();
+  else if(v==='onlinePending')h=renderOnlinePending();
+  else if(v==='ben')h=STATE_benRef?renderBeneFile():renderBen();
+  else if(v==='detail')h=renderDetail();
+  else if(v==='wellbeing')h=renderWellbeing();
+  else if(v==='pick')h=renderPlaceholder('Pick Plan','pick','Batch parcels for Group 1 & 2 collection and delivery runs.');
+  else if(v==='stock')h=renderPlaceholder('Stock','stock','Track inventory levels, expiry dates and reorder thresholds.');
+  else if(v==='deliv')h=renderPlaceholder('Deliveries','deliv','Plan and route home deliveries for beneficiaries who cannot collect.');
+  else if(v==='ops')h=renderPlaceholder('Operations','ops','Volunteer rotas, session planning and site logistics.');
+  else if(v==='reports')h=renderPlaceholder('Reports','reports','Borough balance, throughput and safeguarding reporting.');
+  else h=renderToday();
+  document.getElementById('main').innerHTML=h;
+  /* Swap <i data-lucide="..."> tags for real SVGs */
+  if(typeof lucide !== 'undefined') lucide.createIcons();
+  /* Restore focus to search input so typing continues uninterrupted */
+  if(activeSearch){
+    var inputs=document.querySelectorAll('.searchbox input');
+    for(var i=0;i<inputs.length;i++){
+      if((inputs[i].getAttribute('oninput')||'')===activeSearch){
+        inputs[i].focus();
+        try{inputs[i].setSelectionRange(selEnd,selEnd);}catch(e){}
+        break;
+      }
+    }
+  }
+}
+function boot(){
+  if(hasGAS){
+    google.script.run
+      .withSuccessHandler(function(d){DATA=d||{};render();})
+      .withFailureHandler(function(e){DATA=MOCK;render();toast('Demo mode: '+(e&&e.message||''));})
+      .getData();
+  }else{DATA=MOCK;render();}
+}
+boot();
+console.log('OBA boot complete');
+</script>

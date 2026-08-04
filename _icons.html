@@ -1,0 +1,50 @@
+<script>
+/* ── ICONS via Lucide ── */
+/* Map our internal names to Lucide icon names */
+var ICON_MAP = {
+  arrow:   'arrow-right',
+  back:    'arrow-left',
+  ben:     'users',
+  cal:     'calendar',
+  check:   'check',
+  clock:   'clock',
+  deliv:   'truck',
+  doc:     'file-text',
+  ext:     'landmark',
+  home:    'home',
+  link:    'external-link',
+  list:    'list',
+  lock:    'lock',
+  mail:    'mail',
+  new_ref: 'user-plus',
+  note:    'notebook-pen',
+  parcel:  'package',
+  phone:   'phone',
+  plus:    'plus',
+  print:   'printer',
+  ref:     'file-search',
+  search:  'search',
+  send:    'send',
+  shield:  'shield-alert',
+  sms:     'message-square',
+  star:    'star',
+  task:    'check-square',
+  users:   'users',
+  video:   'video',
+  warn:    'alert-triangle',
+  wb:      'heart-handshake',
+  x:       'x',
+  /* risk area icons */
+  brain:   'brain',
+  card:    'credit-card',
+  med:     'stethoscope'
+};
+
+function ic(name, sz) {
+  sz = sz || 18;
+  var lucideName = ICON_MAP[name] || name;
+  return '<i data-lucide="' + lucideName + '" style="width:' + sz + 'px;height:' + sz + 'px;display:inline-block;vertical-align:middle;flex-shrink:0"></i>';
+}
+
+console.log('OBA icons loaded');
+</script>

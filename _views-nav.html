@@ -1,0 +1,308 @@
+<script>
+/* ══════════════════════════════════════════════════════
+   SIDEBAR  (always-visible subnav, no collapse)
+══════════════════════════════════════════════════════ */
+function renderSidebar(){
+  var refs=DATA.referrals||[];
+  var newCount=refs.filter(function(r){return isNewRef(r);}).length;
+  var regCount=refs.filter(function(r){return APPT_PENDING.indexOf(r.status)>=0&&r.apptDate;}).length;
+  var benOpenCount=refs.filter(function(r){return COMPLETE_STATUSES.indexOf(r.status)>=0;}).length;
+  var wbCount=(DATA.actions||[]).filter(function(a){return a.status!=='done';}).length;
+  var v=STATE.view;
+  var refViews=['overview','allReferrals','newReferrals','registrations','ben','detail'];
+  var wbViews=['wellbeing'];
+  var h='<div class="brand-card"><svg width="28" height="28" viewBox="0 0 30 30" fill="none"><circle cx="15" cy="15" r="13" stroke="#6f9a2a" stroke-width="1.6"/><ellipse cx="11" cy="17" rx="4" ry="2.2" transform="rotate(-40 11 17)" fill="#6f9a2a"/><ellipse cx="18" cy="11" rx="4" ry="2.2" transform="rotate(-40 18 11)" fill="#a7c74a"/></svg><div><div class="logo-text">Olive Branch Aid</div><div class="logo-sub">more than a food bank</div></div></div>';
+  h+='<div class="ops-label">OPERATIONS SUITE</div>';
+  h+=sideBtn('today','Today',null,v==='today');
+  /* Referrals — always-visible subnav */
+  var refActive=refViews.indexOf(v)>=0;
+  h+=sideBtn('ref','Referrals',null,refActive);
+  h+='<div class="subnav">';
+  h+=subBtn('overview','Overview',null,v==='overview');
+  h+=subBtn('allReferrals','All Referrals',null,v==='allReferrals'||(v==='detail'));
+  h+=subBtn('newReferrals','New Referrals',newCount,v==='newReferrals');
+  var onlineCount=(DATA.referrals||[]).filter(function(r){return r.status==='Pending online registration appointment';}).length;
+  h+=subBtn('registrations','Registrations',regCount,v==='registrations');
+  if(onlineCount)h+=subBtn('onlinePending','Online pending',onlineCount,v==='onlinePending');
+  h+=subBtn('ben','Beneficiaries',benOpenCount,v==='ben');
+  h+='</div>';
+  /* Wellbeing — always-visible subnav */
+  var wbActive=wbViews.indexOf(v)>=0;
+  h+=sideBtn('wb','Wellbeing',wbCount>0?wbCount:null,wbActive);
+  h+='<div class="subnav">';
+  h+=subBtn('wbOverview','Overview',wbCount>0?wbCount:null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===0);
+  h+=subBtn('wbAllCases','All cases',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===1);
+  h+=subBtn('wbTodo','To-do / Notes',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===2);
+  h+='</div>';
+  h+=sideBtn('pick','Pick Plan',4,v==='pick');
+  h+=sideBtn('stock','Stock',null,v==='stock');
+  h+=sideBtn('deliv','Deliveries',2,v==='deliv');
+  h+=sideBtn('ops','Operations',null,v==='ops');
+  h+=sideBtn('reports','Reports',null,v==='reports');
+  h+='<div class="side-foot"><span>OBA Ops v1.0</span>'+(DATA.sheetUrl?'<a href="'+DATA.sheetUrl+'" target="_blank" rel="noopener">sheet ↗</a>':'')+'</div>';
+  document.getElementById('sidebar').innerHTML=h;
+}
+function sideBtn(key,lbl,badge,active){
+  var icons={today:'today',ref:'ref',wb:'welfare',pick:'pick',stock:'stock',deliv:'deliv',ops:'ops',reports:'reports'};
+  return '<button class="nav-item'+(active?' active-parent':'')+'" onclick="sideNav(\''+key+'\')"><span class="nav-ic">'+ic(icons[key]||'ref',16)+'</span><span class="nav-lbl">'+lbl+'</span>'+(badge?'<span class="nav-badge">'+badge+'</span>':'')+'</button>';
+}
+function subBtn(key,lbl,badge,active){
+  return '<button class="'+(active?'active':'')+'" onclick="sideNav(\''+key+'\')">'+lbl+(badge?'<span class="sub-badge">'+badge+'</span>':'')+'</button>';
+}
+function sideNav(key){
+  if(key==='ref') return go('overview');
+  if(key==='wb') return go('wellbeing');
+  if(key==='wbOverview'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
+  if(key==='wbAllCases'){STATE.wbMainTab=1;STATE.wbRef=null;return go('wellbeing');}
+  if(key==='wbTodo'){STATE.wbMainTab=2;STATE.wbRef=null;return go('wellbeing');}
+  if(key==='wellbeing'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
+  if(key==='wb'){STATE.wbMainTab=0;STATE.wbRef=null;return go('wellbeing');}
+  go(key);
+}
+function go(view,ref){STATE.view=view;if(ref)STATE.ref=ref;if(view==='detail'){STATE.step=1;STATE.wtab=1;}render();window.scrollTo(0,0);}
+
+/* ══════════════════════════════════════════════════════
+   TODAY  (Lovable-style: hero stats + stage track + tasks)
+══════════════════════════════════════════════════════ */
+function renderToday(){
+  var refs=DATA.referrals||[];
+  var today=new Date();
+  var todayStr=today.toISOString().slice(0,10);
+  var actions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
+  var overdue=actions.filter(function(a){return a.dueBy&&a.dueBy<todayStr;});
+  function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
+  var stageConfig=[
+    {pipe:'New',label:'New',color:'#8aa53f'},
+    {pipe:'Appointment',label:'Appointment',color:'#d4a94a'},
+    {pipe:'Registration',label:'Registration',color:'#c06e14'},
+    {pipe:'Complete',label:'Beneficiaries',color:'#557a16'}
+  ];
+  var h='<div class="eyebrow">'+today.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+'</div>';
+  h+='<h1 style="margin-bottom:16px">Today</h1>';
+  if(overdue.length){
+    h+='<div class="alert-banner" style="margin-bottom:20px"><div class="ah">'+ic('warn',16)+overdue.length+' overdue task'+(overdue.length>1?'s':'')+' need attention</div>';
+    overdue.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+' <span style="color:var(--red);font-size:11.5px">Due '+esc(a.dueBy)+'</span></div>';});
+    h+='</div>';
+  }
+  h+='<div class="stage-track" style="margin-bottom:20px">';
+  stageConfig.forEach(function(s){h+='<div class="stage-box"><div class="stage-bar" style="background:'+s.color+'"></div><div class="sn">'+pcount(s.pipe)+'</div><div class="sl">'+s.label+'</div></div>';});
+  h+='</div>';
+  h+='<div style="margin-bottom:24px" class="bor-compact">'+boroughBreakdown()+'</div>';
+  var todayAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===todayStr;});
+  todayAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
+  h+='<div class="today-apts-head"><h2>Appointments today</h2>';
+  if(todayAppts.length)h+='<button class="btn btn-ghost" onclick="window.print()" style="font-size:13px;padding:7px 13px">'+ic('print',14)+' Print list</button>';
+  h+='</div>';
+  if(!todayAppts.length){
+    h+='<div class="card placeholder" style="padding:18px;margin-bottom:20px">No appointments scheduled for today.</div>';
+  } else {
+    h+='<div class="card apt-compact-list" id="print-apts">';
+    h+='<div class="apt-compact-head"><span>Time</span><span>Name</span><span>Type</span><span>Volunteer</span></div>';
+    todayAppts.forEach(function(r){
+      var aptType=r.apptType==='online'?'Online registration':isComplex(r)?'WB Follow-up':'New registration';
+      h+='<div class="apt-compact-row" onclick="go(\'detail\',\''+r.ref+'\')">';
+      h+='<span class="ac-time">'+esc(r.apptTime||'—')+'</span>';
+      h+='<span class="ac-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+'</span>';
+      h+='<span class="ac-type">'+aptType+'</span>';
+      h+='<span class="ac-vol">'+esc(r.apptSlot&&r.apptSlot!=='Anyone'?r.apptSlot:'—')+'</span>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='<h2 style="margin:20px 0 10px">Collections today</h2>';
+  h+='<div class="card placeholder" style="padding:18px"><p style="color:var(--muted);font-size:13.5px">Collections scheduling not yet wired up. Developer: connect to Pick Plan / delivery system.</p></div>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════
+   OVERVIEW
+══════════════════════════════════════════════════════ */
+function renderOverview(){
+  var refs=DATA.referrals||[];
+  var urgent=(DATA.actions||[]).filter(function(a){return a.status!=='done'&&a.priority==='urgent';});
+  function pcount(pipe){return refs.filter(function(r){return statusMeta(r.status).pipe===pipe;}).length;}
+  var pipe=[['New','New Referrals','pt-green'],['Appointment','Appointment','pt-orange'],['Registration','Registration','pt-dark'],['Complete','Beneficiaries','pt-dark']];
+  var h='<div class="eyebrow">Referral Management</div><h1>Pipeline Overview</h1>';
+  h+='<p style="color:var(--muted);margin-bottom:24px">Live pipeline across every stage.</p>';
+  if(urgent.length){h+='<div class="alert-banner"><div class="ah">'+ic('warn',16)+urgent.length+' urgent task'+(urgent.length>1?'s':'')+' outstanding</div>';urgent.forEach(function(a){h+='<div class="ar"><b>'+esc(a.ref)+'</b> — '+esc(a.name)+': '+esc(a.action)+'</div>';});h+='</div>';}
+  h+='<div class="pipeline">';
+  pipe.forEach(function(p){h+='<div class="pcard '+p[2]+'"><div class="num">'+pcount(p[0])+'</div><div class="lab">'+p[1]+'</div></div>';});
+  h+='</div>';
+  h+='<div style="margin-bottom:22px">'+boroughBreakdown()+'</div>';
+  // ── Outstanding tasks (moved from Today) ──
+  var allActions=(DATA.actions||[]).filter(function(a){return a.status!=='done';});
+  if(allActions.length){
+    var filters=['All','Validation','Appointment','Wellbeing','Registration','Follow-up'];
+    h+='<div class="head-row" style="margin-bottom:14px"><h2>Outstanding Tasks</h2><div style="display:flex;gap:7px;flex-wrap:wrap">';
+    filters.forEach(function(f){h+='<button class="fchip'+(STATE.taskFilter===f?' on':'')+'" onclick="STATE.taskFilter=\''+f+'\';render()">'+f+'</button>';});
+    h+='</div></div>';
+    var todayStr=new Date().toISOString().slice(0,10);
+    allActions.sort(function(a,b){return(a.dueBy||'9').localeCompare(b.dueBy||'9');});
+    allActions.forEach(function(a){
+      var ov=a.dueBy&&a.dueBy<todayStr;
+      h+='<div class="task-card'+(ov?' overdue-card':'')+'" onclick="go(\'detail\',\''+a.ref+'\')" ><div class="task-ic '+(ov?'plum':'green')+'">'+ic(ov?'warn':'cal',16)+'</div><div class="task-body"><div class="task-top"><span class="task-ref">'+esc(a.ref)+'</span><span class="task-name">'+esc(a.name)+'</span>'+(ov?'<span class="overdue-tag">Overdue</span>':'')+'</div><div class="task-desc">'+esc(a.action)+'</div><div class="task-meta"><span>'+ic('clock',13)+' Due: '+esc(a.dueBy||'—')+'</span><span>Officer: '+esc(a.officer)+'</span></div></div><span style="color:var(--faint);align-self:center">'+ic('arrow')+'</span></div>';
+    });
+  } else {
+    h+='<div class="card placeholder" style="padding:18px">No outstanding tasks.</div>';
+  }
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-ghost" onclick="go(\'allReferrals\')">'+ic('list',15)+'All Referrals</button><button class="btn btn-ghost" onclick="go(\'newReferrals\')">'+ic('new_ref',15)+'New Referrals</button><button class="btn btn-ghost" onclick="go(\'registrations\')">'+ic('cal',15)+'Registrations</button><button class="btn btn-ghost" onclick="go(\'ben\')">'+ic('ben',15)+'Beneficiaries</button></div>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════
+   ALL REFERRALS  (search + filter)
+══════════════════════════════════════════════════════ */
+function renderAllReferrals(){
+  var refs=DATA.referrals||[];
+  var q=(STATE.allRefSearch||'').toLowerCase();
+  var f=STATE.allRefFilter||'all';
+  var allCount=refs.length;
+  var activeCount=refs.filter(function(r){return COMPLETE_STATUSES.indexOf(r.status)>=0;}).length;
+  var pendingCount=refs.filter(function(r){return APPT_PENDING.indexOf(r.status)>=0||NEW_STATUSES.indexOf(r.status)>=0;}).length;
+  var shown=refs.filter(function(r){
+    if(q){var hay=(r.ref+' '+r.name+' '+r.phone+' '+r.email+' '+r.borough).toLowerCase();if(hay.indexOf(q)<0)return false;}
+    if(f==='active')return COMPLETE_STATUSES.indexOf(r.status)>=0;
+    if(f==='pending')return APPT_PENDING.indexOf(r.status)>=0||NEW_STATUSES.indexOf(r.status)>=0;
+    return true;
+  });
+  var h='<div class="eyebrow">Referral Management</div><div class="head-row"><div><h1>All Referrals</h1><p style="color:var(--muted);margin-top:4px">Click on a referral to view more details.</p></div>';
+  h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name, ref, phone, email, borough…" value="'+esc(STATE.allRefSearch||'')+'" oninput="STATE.allRefSearch=this.value;render()"></div></div>';
+  h+='<div class="filter-strip">';
+  h+='<button class="fchip'+(f==='all'?' on':'')+'" onclick="STATE.allRefFilter=\'all\';render()">All <span style="font-size:11px;opacity:.7">'+allCount+'</span></button>';
+  h+='<button class="fchip'+(f==='active'?' on':'')+'" onclick="STATE.allRefFilter=\'active\';render()">Active Beneficiaries <span style="font-size:11px;opacity:.7">'+activeCount+'</span></button>';
+  h+='<button class="fchip fchip-orange'+(f==='pending'?' on':'')+'" onclick="STATE.allRefFilter=\'pending\';render()">Pending <span style="font-size:11px;opacity:.7">'+pendingCount+'</span></button>';
+  h+='</div>';
+  if(!shown.length){h+='<div class="card placeholder">No referrals match.</div>';return h;}
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref #</th><th>Name</th><th>Borough</th><th>Type</th><th>Date</th><th>Status</th></tr></thead><tbody>';
+  shown.forEach(function(r){
+    var flagged=r.flags&&(r.flags.indexOf('overdue')>=0||r.flags.indexOf('urgent')>=0);
+    var isDna=r.status==='Did not attend (DNA) registration';
+    var rowClass=(flagged?'flag-row':'')+(isDna?' dna-table-row':'');
+    var refNum=r.ref.replace('REF-','');
+    h+='<tr class="'+rowClass.trim()+'" onclick="go(\'detail\',\''+r.ref+'\')">';
+    h+='<td class="r-ref" style="font-family:\'IBM Plex Mono\';font-size:13px">'+esc(refNum)+'</td>';
+    h+='<td><span class="r-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+(flagged?' '+ic('warn',14):'')+'</span></td>';
+    h+='<td class="r-muted">'+esc(r.borough)+'</td>';
+    h+='<td class="r-muted" style="font-family:\'IBM Plex Mono\';font-size:12px">'+esc(r.type)+'</td>';
+    h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td>';
+    h+='<td>'+statusPill(r)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════
+   NEW REFERRALS  (not yet registered)
+══════════════════════════════════════════════════════ */
+function renderNewReferrals(){
+  var q=(STATE.newRefSearch||'').toLowerCase();
+  var refs=(DATA.referrals||[]).filter(isNewRef).filter(function(r){
+    if(!q) return true;
+    return (r.ref+' '+r.name+' '+r.borough+' '+r.phone+' '+r.email).toLowerCase().indexOf(q)>=0;
+  });
+  var h='<div class="eyebrow">Referrals</div><div class="head-row"><div><h1>New Referrals</h1><p style="color:var(--muted);margin-top:4px">Referrals received but not yet fully registered. Includes DNA and rescheduled cases.</p></div>';
+  h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name, ref, phone…" value="'+esc(STATE.newRefSearch||'')+'" oninput="STATE.newRefSearch=this.value;render()"></div></div>';
+  if(!refs.length){h+='<div class="card placeholder"><div class="pic">'+ic('new_ref',32)+'</div><b>No new referrals match</b><p style="margin-top:8px">Try a different search, or clear the search box.</p></div>';return h;}
+  h+='<div class="card" style="overflow-x:auto"><table class="rtable"><thead><tr><th>Ref</th><th>Name</th><th>Borough</th><th>Type</th><th>Received</th><th>Status</th></tr></thead><tbody>';
+  refs.forEach(function(r){
+    var emerg=r.type==='EMERGENCY';
+    h+='<tr onclick="go(\'detail\',\''+r.ref+'\')"><td class="r-ref">'+esc(r.ref)+'</td>';
+    h+='<td><span class="r-name">'+esc(r.name)+(emerg?' <span class="flag-tag flag-emerg">Emergency</span>':'')+'</span></td>';
+    h+='<td class="r-muted">'+esc(r.borough)+'</td><td class="r-muted" style="font-family:\'IBM Plex Mono\';font-size:12px">'+esc(r.type)+'</td>';
+    h+='<td class="r-muted">'+esc(r.receivedDate)+'</td><td>'+statusPill(r)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════
+   REGISTRATIONS  (appointment-booked, sorted by time/day)
+══════════════════════════════════════════════════════ */
+function renderRegistrations(){
+  var allRefs=DATA.referrals||[];
+  var q=STATE.regSearch||'';
+  // Booked appointments (have a date)
+  var booked=allRefs.filter(function(r){return APPT_PENDING.indexOf(r.status)>=0&&r.apptDate;});
+  if(q)booked=booked.filter(function(r){return(r.name+' '+r.ref).toLowerCase().indexOf(q.toLowerCase())>=0;});
+  // DNA / need to rescheduled (no date, problematic status)
+  var dnaStatuses=['Did not attend (DNA) registration','2nd contact attempt - waiting response','1st contact attempt - waiting response','Appointment Rescheduled'];
+  var dna=allRefs.filter(function(r){return dnaStatuses.indexOf(r.status)>=0&&!r.apptDate;});
+  if(q)dna=dna.filter(function(r){return(r.name+' '+r.ref).toLowerCase().indexOf(q.toLowerCase())>=0;});
+  var groups={};booked.forEach(function(r){(groups[r.apptDate]=groups[r.apptDate]||[]).push(r);});
+  var days=Object.keys(groups).sort();
+  var h='<div class="eyebrow">Referrals · Welfare</div><div class="head-row"><div><h1>Registrations</h1><p style="color:var(--muted);margin-top:4px">Appointments booked by day, plus cases that need re-booking.</p></div>';
+  h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name or ref…" value="'+esc(q)+'" oninput="STATE.regSearch=this.value;render()"></div></div>';
+  // ── Booked appointments ──
+  if(!days.length){
+    h+='<div class="card placeholder" style="margin-bottom:20px"><div class="pic">'+ic('cal',32)+'</div><b>No registration appointments booked</b><p style="margin-top:8px">Applicants who have been sent a booking invite will appear here.</p></div>';
+  } else {
+    days.forEach(function(day){
+      var list=groups[day].sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
+      var d2=new Date(day+'T00:00:00');var label=isNaN(d2)?day:d2.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+      h+='<div class="day-group"><div class="day-head">'+ic('cal',16)+label+'<span class="day-cnt">'+list.length+' booked</span></div>';
+      h+='<div class="card">';
+      list.forEach(function(r){
+        h+='<div class="appt-row" onclick="openReg(\''+r.ref+'\')"><div class="appt-time">'+esc(r.apptTime||'—')+'</div><div class="appt-info"><div class="appt-name">'+renderFlags(r,{showEmerg:false})+esc(r.name)+'</div><div class="appt-meta">'+esc(r.ref)+' · '+esc(r.borough)+' · '+hh(r)+(r.apptType==='online'?' · Online':' · In-person')+'</div></div>'+
+          '<div style="font-size:12.5px;color:var(--muted);white-space:nowrap;margin-right:8px">'+(r.apptSlot&&r.apptSlot!=='Anyone'?'<span style="color:var(--plum);font-weight:500">'+esc(r.apptSlot)+'</span>':'Anyone')+'</div>'+
+          statusPill(r)+'<span style="color:var(--faint);margin-left:8px">'+ic('arrow')+'</span></div>';
+      });
+      h+='</div></div>';
+    });
+  }
+  // ── DNA / need to reschedule ──
+  h+='<h2 style="margin:6px 0 10px;display:flex;align-items:center;gap:10px">'+ic('warn',18)+' Did not attend / need to reschedule';
+  if(dna.length)h+='<span style="font-family:\'IBM Plex Mono\';font-size:11px;background:var(--red-bg);color:var(--red);padding:3px 9px;border-radius:6px">'+dna.length+' flagged</span>';
+  h+='</h2>';
+  if(!dna.length){
+    h+='<div class="card placeholder" style="padding:18px">No cases currently flagged as DNA or needing reschedule.</div>';
+  } else {
+    h+='<div class="dna-card">';
+    dna.forEach(function(r){
+      h+='<div class="dna-row"><div class="bene-avatar" style="width:36px;height:36px;font-size:13px;background:var(--red-bg);color:var(--red)">'+esc(r.name.charAt(0))+'</div>';
+      h+='<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14.5px">'+esc(r.name)+'</div>';
+      h+='<div style="font-size:12.5px;color:var(--muted)">'+esc(r.ref)+' · '+esc(r.borough)+' · Received '+esc(r.receivedDate)+'</div></div>';
+      h+=statusPill(r);
+      h+='<button class="btn btn-ghost" style="font-size:13px;padding:8px 14px" onclick="go(\'detail\',\''+r.ref+'\')">';
+      h+=ic('cal',14)+'Rebook</button></div>';
+    });
+    h+='</div>';
+  }
+  return h;
+}
+function openReg(ref){STATE.view='detail';STATE.ref=ref;STATE.step=2;STATE.wtab=1;render();window.scrollTo(0,0);}
+
+/* ══════════════════════════════════════════════════════
+   BENEFICIARIES
+══════════════════════════════════════════════════════ */
+function renderBen(){
+  var refs=(DATA.referrals||[]).slice();
+  var q=(STATE.benSearch||'').toLowerCase();
+  refs=refs.filter(function(r){
+    if(q&&(r.name+' '+r.ref).toLowerCase().indexOf(q)<0)return false;
+    if(STATE.benFilter==='complex'&&!isComplex(r))return false;
+    if(STATE.benFilter!=='all'&&STATE.benFilter!=='complex'&&benCat(r)!==STATE.benFilter)return false;
+    if(STATE.benBorough!=='all'&&r.borough!==STATE.benBorough)return false;
+    return true;
+  });
+  var catRank={open:0,awaiting:1,closed:2};
+  refs.sort(function(a,b){var ca=catRank[benCat(a)],cb=catRank[benCat(b)];if(ca!==cb)return ca-cb;var xa=isComplex(a)?0:1,xb=isComplex(b)?0:1;if(xa!==xb)return xa-xb;var fa=isFinalMonth(a)?0:1,fb=isFinalMonth(b)?0:1;return fa-fb;});
+  var h='<div class="eyebrow">Referrals</div><div class="head-row"><div><h1>Beneficiaries</h1><p style="color:var(--muted);margin-top:4px">All referrals, prioritised: open → complex → final month.</p></div>';
+  h+='<div class="searchbox">'+ic('search',15)+'<input placeholder="Search name or ref…" value="'+esc(STATE.benSearch||'')+'" oninput="STATE.benSearch=this.value;render()"></div></div>';
+  h+='<div style="margin-bottom:16px">'+boroughBreakdown()+'</div>';
+  h+='<div class="filter-strip">';
+  ['all|All cases','open|Open','awaiting|Awaiting registration','closed|Closed','complex|Complex only'].forEach(function(o){var p=o.split('|');h+='<button class="fchip'+(STATE.benFilter===p[0]?' on':'')+'" onclick="STATE.benFilter=\''+p[0]+'\';render()">'+p[1]+'</button>';});
+  h+='<select class="filter-sel" onchange="STATE.benBorough=this.value;render()"><option value="all">All boroughs</option>';
+  ['Lambeth','Southwark','Wandsworth','Croydon'].forEach(function(b){h+='<option value="'+b+'" '+(STATE.benBorough===b?'selected':'')+'>'+b+'</option>';});
+  h+='</select><span style="color:var(--muted);font-size:13px;margin-left:auto">'+refs.length+' shown</span></div>';
+  if(!refs.length){h+='<div class="card placeholder">No beneficiaries match.</div>';return h;}
+  h+='<div class="card">';
+  refs.forEach(function(r){
+    var flags=flagList(r),init=(r.name||'?').trim().charAt(0).toUpperCase();
+    var tags=renderFlags(r,{showEmerg:true,showFinal:true});
+    h+='<div class="bene-card" onclick="openBeneFile(\''+r.ref+'\')"><div class="bene-avatar">'+esc(init)+'</div><div class="bene-info"><div class="bene-name">'+esc(r.name)+' '+tags+'</div><div class="bene-meta">'+esc(r.ref)+' · '+esc(r.borough)+' · '+hhWords(r)+(r.openFrom?' · Open '+monthsOpen(r):'')+'</div></div>'+statusPill(r)+'<span style="color:var(--faint);margin-left:8px">'+ic('arrow')+'</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
+console.log('OBA views part A loaded');
+</script>
