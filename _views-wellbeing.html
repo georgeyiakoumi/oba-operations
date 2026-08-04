@@ -358,7 +358,7 @@ function addWbTeamNote(){
   toast('Note added');render();
 }
 
-function openWbFile(ref){STATE.wbRef=ref;STATE.wbTab=0;STATE.view='wellbeing';render();window.scrollTo(0,0);}
+function openWbFile(ref,tab){STATE.wbRef=ref;STATE.wbTab=tab||0;STATE.view='wellbeing';render();window.scrollTo(0,0);}
 
 /* ── Person file: summary header + tabs (Overview, Notes, Tasks) ── */
 function renderWbFile(r){
@@ -405,7 +405,7 @@ function renderWbFile(r){
 
 /* ── File tab 0: Overview ── */
 function renderWbFileOverview(r,wf,openTasks,doneTasks){
-  var myActions=(DATA.actions||[]).filter(function(a){return a.ref===r.ref&&a.status!=='done';});
+  var myActions=getAllTasks().filter(function(a){return a.ref===r.ref;});
   var notes=(DATA.notes||[]).filter(function(n){return n.ref===r.ref;});
   var lastNote=notes.length?notes[notes.length-1]:null;
   var h='';
@@ -417,12 +417,13 @@ function renderWbFileOverview(r,wf,openTasks,doneTasks){
   h+='</div>';
   /* actions for this person */
   if(myActions.length){
-    h+='<h2 style="margin-bottom:10px">Open actions</h2><div class="card" style="margin-bottom:18px">';
+    h+='<h2 style="margin-bottom:10px">Open tasks</h2><div class="card" style="margin-bottom:18px">';
     myActions.forEach(function(a){
-      h+='<div class="action-card pri-'+esc(a.priority)+'"><div class="action-ic">'+ic(a.priority==='urgent'?'warn':'clock',16)+'</div>';
-      h+='<div class="action-body"><div class="action-top"><span class="pri-tag">'+esc(a.priority)+'</span><span style="font-weight:600">'+esc(a.action)+'</span></div>';
-      h+='<div class="action-meta"><span>'+ic('clock',13)+' Due: '+fmtDate(a.dueBy)+'</span><span>Officer: '+esc(a.officer)+'</span></div></div>';
-      h+='<button class="action-done" onclick="completeActionUI(\''+a.actionId+'\')">Mark done</button></div>';
+      var isOverdue=a.task.due&&a.task.due<new Date().toISOString().slice(0,10);
+      h+='<div class="action-card'+(isOverdue?' pri-urgent':' pri-pending')+'"><div class="action-ic">'+ic(isOverdue?'warn':'clock',16)+'</div>';
+      h+='<div class="action-body"><div class="action-top"><span class="pri-tag">'+(isOverdue?'Overdue':'Open')+'</span><span style="font-weight:600">'+esc(a.task.note)+'</span></div>';
+      h+='<div class="action-meta"><span>'+ic('clock',13)+' Due: '+fmtDate(a.task.due)+'</span><span>Officer: '+esc(a.task.owner)+'</span><span>Area: '+esc(a.area)+'</span></div></div>';
+      h+='<button class="action-done" onclick="STATE.wbTab=2;render()">View task</button></div>';
     });
     h+='</div>';
   }
