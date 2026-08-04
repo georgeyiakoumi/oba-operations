@@ -326,7 +326,7 @@ function renderDashActions(refs,todayStr){
       h+='<td class="r-ref" style="font-size:11px">'+esc(a.ref)+'</td>';
       h+='<td style="font-weight:500">'+esc(a.name)+(ov?' <span class="overdue-tag">Overdue</span>':'')+'</td>';
       h+='<td class="r-muted" style="font-size:13px">'+esc(a.action)+'</td>';
-      h+='<td class="r-muted" style="white-space:nowrap">'+esc(a.dueBy||'—')+'</td>';
+      h+='<td class="r-muted" style="white-space:nowrap">'+fmtDate(a.dueBy||'—')+'</td>';
       h+='<td class="r-muted">'+esc(a.officer)+'</td>';
       h+='<td style="color:var(--faint)">'+ic('chevron-right',14)+'</td></tr>';
     });
