@@ -24,11 +24,11 @@ function renderSidebar(){
   h+='<div class="ops-label">OPERATIONS SUITE</div>';
 
   /* Dashboard */
-  h+=sideBtn('dashboard','Dashboard','star',null,dashViews.indexOf(v)>=0);
+  h+=sideBtn('dashboard','Dashboard','layout-dashboard',null,dashViews.indexOf(v)>=0);
 
   /* Referrals + subnav */
   var refActive=refViews.indexOf(v)>=0;
-  h+=sideBtn('ref','Referrals','ref',refCount,refActive);
+  h+=sideBtn('ref','Referrals','folder-open',refCount,refActive);
   h+='<div class="subnav">';
   h+=subBtn('awaitingTriage','New',triageCount,v==='awaitingTriage'||v==='newReferrals');
   h+=subBtn('inProgress','Reg. Appointments',inProgCount,v==='inProgress'||v==='registrations'||v==='onlinePending'||v==='detail');
@@ -36,14 +36,14 @@ function renderSidebar(){
   h+='</div>';
 
   /* Beneficiaries (top-level) */
-  h+=sideBtn('ben','Beneficiaries','ben',benCount,v==='ben');
+  h+=sideBtn('ben','Beneficiaries','users',benCount,v==='ben');
 
   /* Closed (top-level) */
-  h+=sideBtn('closed','Closed','x',closedCount,v==='closed');
+  h+=sideBtn('closed','Closed','x-circle',closedCount,v==='closed');
 
   /* Wellbeing + subnav */
   var wbActive=wbViews.indexOf(v)>=0;
-  h+=sideBtn('wb','Wellbeing','wb',wbCount>0?wbCount:null,wbActive);
+  h+=sideBtn('wb','Wellbeing','heart-handshake',wbCount>0?wbCount:null,wbActive);
   h+='<div class="subnav">';
   h+=subBtn('wbAllCases','All Cases',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===1);
   h+=subBtn('wbTodo','To-do / Notes',null,v==='wellbeing'&&!STATE.wbRef&&STATE.wbMainTab===2);
@@ -280,7 +280,7 @@ function toggleSort(col){
 }
 function sortHeader(col,label){
   var active=STATE.allRefSort===col;
-  var arrow=active?(STATE.allRefSortDir==='asc'?'↑':'↓'):'↕';
+  var arrow=active?(STATE.allRefSortDir==='asc'?ic('chevron-up',12):ic('chevron-down',12)):ic('chevrons-up-down',12);
   return '<th class="sortable'+(active?' sorted':'')+'" onclick="toggleSort(\''+col+'\')">'+label+'<span class="sort-arrow">'+arrow+'</span></th>';
 }
 function renderAllReferrals(){
@@ -361,7 +361,8 @@ function renderAllReferrals(){
     h+='<td class="r-ref">'+esc(refNum)+'</td>';
     h+='<td><span class="r-name">'+renderFlags(r,{showEmerg:true})+esc(r.name)+(flagged?' '+ic('warn',14):'')+'</span></td>';
     h+='<td class="r-muted">'+esc(r.borough)+'</td>';
-    h+='<td class="r-muted" style="font-family:var(--font-mono);font-size:12px">'+esc(r.type)+'</td>';
+    var typeCls=r.type==='EMERGENCY'?'type-emergency':'type-standard';
+    h+='<td><span class="type-badge '+typeCls+'">'+esc(r.type==='EMERGENCY'?'Emergency':'Standard')+'</span></td>';
     h+='<td class="r-muted">'+fmtDate(r.receivedDate)+'</td>';
     h+='<td>'+statusPill(r)+'</td></tr>';
   });
