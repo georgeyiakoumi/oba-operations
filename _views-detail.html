@@ -78,7 +78,7 @@ function renderDetail(){
     var n=i+1;
     var isActive=STATE.step===n;
     var isDone=n<STATE.step;
-    var isLocked=(n>=4)&&(STATE.step<4);
+    var isLocked=(n>=4)&&(STATE.step<3);
     var cls='detail-tab'+(isActive?' active':'')+(isDone?' done':'')+(isLocked?' locked':'');
     var clickFn=isLocked?'void(0)':(n===4)?'setStepGuarded('+n+',\''+STATE.ref+'\')':'setStep('+n+')';
     h+='<button class="'+cls+'" onclick="'+clickFn+'"'+(isLocked?' title="Complete the Registration Interview first" tabindex="-1"':'')+'>'+
@@ -92,7 +92,7 @@ function renderDetail(){
   else if(STATE.step===2)h+=renderStep1(r);
   else if(STATE.step===3)h+=renderRegInterview(r);
   else if(STATE.step===4)h+=renderRegFinalising(r);
-  else h+='<div class="placeholder" style="padding:40px;text-align:center"><div style="margin-bottom:12px">'+ic('note',30)+'</div><b>Follow-up</b><p style="margin-top:8px;color:var(--muted)">Notes, timeline and follow-up appointments.</p></div>';
+  else h+=renderStepFollowUp(r);
   h+='</div></div>';
   return h;
 }
@@ -311,6 +311,10 @@ function renderStep1(r){
     }
   }
   h+='</div></div></div></div>';
+  h+='<div style="margin-top:18px;display:flex;gap:10px">';
+  h+='<button class="btn btn-ghost" onclick="setStep(1)">'+ic('back',15)+'Back to Referral Information</button>';
+  h+='<button class="btn btn-green" onclick="setStep(3)">'+ic('arrow',15)+'Continue to Registration Interview</button>';
+  h+='</div>';
   return h;
 }
 function triage(ref,field,value){var r=getRef(ref);r[field]=value;if(hasGAS)google.script.run.withFailureHandler(function(e){toast('Error: '+e.message);}).saveTriageField(ref,field,value);render();}
@@ -636,8 +640,65 @@ function renderRegFinalising(r){
   h+='<button class="final-btn fb-orange" onclick="finalise(\''+r.ref+'\',\'delivery-waitlist\')"><div><div>On waiting list for delivery</div><div class="fb-desc">Household registered but waiting for a delivery volunteer. Set the 3-month end date once delivery is confirmed.</div></div>'+ic('deliv',18)+'</button>';
   h+='<button class="final-btn fb-orange" onclick="finalise(\''+r.ref+'\',\'rebook\')" style="opacity:.85"><div><div>Registration Incomplete — rebook</div><div class="fb-desc">Moves status to "Appointment Rescheduled". Sends the applicant a new booking link.</div></div>'+ic('cal',18)+'</button>';
   h+='</div></div>';
+  h+='<div style="margin-top:18px;display:flex;gap:10px">';
+  h+='<button class="btn btn-ghost" onclick="setStep(3)">'+ic('back',15)+'Back to Registration Interview</button>';
+  h+='<button class="btn btn-green" onclick="setStep(5)">'+ic('arrow',15)+'Continue to Follow-up</button>';
+  h+='</div>';
   return h;
 }
+/* Step 5 — Follow-up */
+function renderStepFollowUp(r){
+  var h='';
+  var notes=(DATA.notes||[]).filter(function(n){return n.ref===r.ref;}).slice().reverse();
+  var tasks=getAllTasks().filter(function(t){return t.ref===r.ref;});
+  var hh=getHouseholdForRef(r.ref);
+
+  /* Summary */
+  h+='<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">';
+  h+='<div class="stat-c"><div class="sl">Status</div><div class="sn" style="font-size:16px">'+esc(r.status)+'</div></div>';
+  h+='<div class="stat-c"><div class="sl">Support period</div><div class="sn" style="font-size:16px">'+esc(monthsOpen(r))+'</div></div>';
+  h+='<div class="stat-c"><div class="sl">Open tasks</div><div class="sn">'+tasks.length+'</div></div>';
+  h+='<div class="stat-c"><div class="sl">Notes</div><div class="sn">'+notes.length+'</div></div>';
+  h+='</div>';
+
+  /* Open tasks */
+  if(tasks.length){
+    h+='<h2 style="margin-bottom:10px">Open tasks</h2>';
+    h+='<div class="card" style="margin-bottom:18px;padding:0;overflow:hidden">';
+    tasks.forEach(function(t){
+      h+='<div class="action-card" style="cursor:pointer" onclick="openWbFile(\''+r.ref+'\',2)">';
+      h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+      h+='<span style="font-family:var(--font-mono);font-size:10px;background:var(--green-chip-bg);color:var(--green-chip-tx);padding:2px 7px;border-radius:5px">'+esc(t.area)+'</span>';
+      h+='<span style="font-weight:500">'+esc(t.task.note)+'</span></div>';
+      h+='<div style="font-size:12px;color:var(--faint);margin-top:4px">Due: '+fmtDate(t.task.due)+' · '+esc(t.task.owner||'Unassigned')+'</div>';
+      h+='</div><span style="color:var(--faint)">'+ic('chevron-right',14)+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  /* Recent notes */
+  h+='<h2 style="margin-bottom:10px">Notes</h2>';
+  if(!notes.length){
+    h+='<div class="card" style="padding:18px;margin-bottom:18px;color:var(--muted)">No notes recorded for this referral.</div>';
+  } else {
+    h+='<div class="card" style="padding:18px 22px;margin-bottom:18px">';
+    notes.forEach(function(n){
+      h+='<div class="note-item"><div class="note-head"><span class="note-date">'+esc(n.date)+'</span><span class="note-cat">'+esc(n.category)+'</span>';
+      if(n.duration)h+='<span class="note-dur">'+ic('clock',13)+esc(n.duration)+' min</span>';
+      h+='<span class="note-author">— '+esc(n.author)+'</span></div><div class="note-text">'+esc(n.text)+'</div></div>';
+    });
+    h+='</div>';
+  }
+
+  /* Quick actions */
+  h+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
+  if(isComplex(r))h+='<button class="btn btn-plum" onclick="openWbFile(\''+r.ref+'\')">'+ic('wb',15)+'Open wellbeing file</button>';
+  h+='<button class="btn btn-ghost" onclick="openBeneFile(\''+r.ref+'\')">'+ic('users',15)+'View beneficiary file</button>';
+  h+='<button class="btn btn-ghost" onclick="setStep(4)">'+ic('back',15)+'Back to Registration Finalising</button>';
+  h+='</div>';
+  return h;
+}
+
 // DEV[8]: flags are updated in-browser; call setFlags() in Code.gs to persist to sheet
 function toggleFlag(ref,flag,checked){var r=getRef(ref);var fl=flagList(r);var idx=fl.indexOf(flag);if(checked&&idx<0)fl.push(flag);else if(!checked&&idx>=0)fl.splice(idx,1);r.flags=fl.join(',');if(hasGAS)google.script.run.withFailureHandler(function(){}).setFlags(ref,r.flags);render();}
 function finalise(ref,type){
