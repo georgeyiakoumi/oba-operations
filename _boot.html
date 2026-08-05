@@ -43,10 +43,13 @@ function render(){
   }
 }
 function boot(){
-  if(hasGAS){
+  /* Use mock data as primary source. To switch to Google Sheets,
+     change USE_SHEET to true and ensure Code.js getData() is configured. */
+  var USE_SHEET=false;
+  if(USE_SHEET&&hasGAS){
     google.script.run
-      .withSuccessHandler(function(d){DATA=d||{};render();})
-      .withFailureHandler(function(e){DATA=MOCK;render();toast('Demo mode: '+(e&&e.message||''));})
+      .withSuccessHandler(function(d){DATA=d||MOCK;render();})
+      .withFailureHandler(function(e){DATA=MOCK;render();toast('Using demo data: '+(e&&e.message||''));})
       .getData();
   }else{DATA=MOCK;render();}
 }
