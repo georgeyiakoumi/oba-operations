@@ -352,6 +352,21 @@ function getAllTasks(){
   });
   return all;
 }
+function printDaySchedule(){
+  var el=document.getElementById('print-day-schedule');
+  if(!el){window.print();return;}
+  var win=window.open('','','width=800,height=600');
+  var dateLabel=new Date(STATE.selectedDay+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  win.document.write('<html><head><title>Day Schedule - '+dateLabel+'</title>');
+  win.document.write('<style>body{font-family:Inter,system-ui,sans-serif;font-size:14px;padding:20px;color:#232a17}h1{font-size:16px;margin:0 0 4px}h2{font-size:15px;margin:10px 0}table{width:100%;border-collapse:collapse}th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#999;padding:8px;border-bottom:1px solid #ddd;font-weight:600}td{padding:10px 8px;border-bottom:1px solid #eee;font-size:13px}.nav-badge,.coll-btns,.btn,.dp-indicators{display:none!important}.card{border:1px solid #ddd;border-radius:8px;margin-bottom:16px;overflow:hidden}.coll-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid #eee}.coll-row:first-child{border-top:0}.coll-time{font-weight:600;width:50px}.coll-name{font-weight:500}</style>');
+  win.document.write('</head><body>');
+  win.document.write('<h1>OBA Operations \u2014 Day Schedule</h1>');
+  win.document.write('<p style="color:#666;margin-bottom:16px">'+dateLabel+'</p>');
+  win.document.write(el.innerHTML);
+  win.document.write('</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},300);
+}
 function markCollection(ref,status){
   var cols=DATA.collections||[];
   for(var i=0;i<cols.length;i++){if(cols[i].ref===ref){cols[i].status=status;break;}}
