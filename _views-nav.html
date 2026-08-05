@@ -195,11 +195,19 @@ function renderDashOverview(refs,todayStr){
   }
 
   if(closingThis.length||closingNext.length){
-    h+='<div class="closing-card"><div class="cc-head">'+ic('calendar-off',18)+'Due to close</div>';
-    h+='<div class="closing-cols">';
-    h+=renderClosingCol(closingThis,thisMonth+' '+thisYear);
-    h+=renderClosingCol(closingNext,nextMonth+' '+nextYear);
-    h+='</div></div>';
+    var totalClosing=closingThis.length+closingNext.length;
+    h+='<div class="closing-card">';
+    h+='<div class="cc-head" style="cursor:pointer;user-select:none" onclick="STATE.closingOpen=!STATE.closingOpen;render()">';
+    h+=ic('calendar-off',18)+'Due to close <span class="nav-badge" style="font-size:11px">'+totalClosing+'</span>';
+    h+='<span style="margin-left:auto;color:var(--faint);transition:transform .15s;transform:rotate('+(STATE.closingOpen?'180':'0')+'deg)">'+ic('chevron-down',16)+'</span>';
+    h+='</div>';
+    if(STATE.closingOpen){
+      h+='<div class="closing-cols">';
+      h+=renderClosingCol(closingThis,thisMonth+' '+thisYear);
+      h+=renderClosingCol(closingNext,nextMonth+' '+nextYear);
+      h+='</div>';
+    }
+    h+='</div>';
   }
 
   return h;
