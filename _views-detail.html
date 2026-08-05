@@ -2,12 +2,14 @@
 /* ══════════════════════════════════════════════════════
    DETAIL PAGE  (stepper + triage + registration interview)
 ══════════════════════════════════════════════════════ */
-var DETAIL_STEPS=['Referral Information','Triage & Validation','Registration Interview','Registration Finalising','Follow-up'];
+var DETAIL_STEPS=['Referral Information','Triage & Validation','Registration Interview'];
 function renderDetail(){
   var r=getRef(STATE.ref);if(!r)return renderAllReferrals();
   var flags=flagList(r);
   var opts=STATUSES.map(function(s){return'<option '+(s.label===r.status?'selected':'')+'>'+esc(s.label)+'</option>';}).join('');
-  var h=renderBreadcrumb([['Referrals','allReferrals']],r.ref+' — '+r.name);
+  var isBene=isBeneficiary(r);
+  var crumb=isBene?[['Beneficiaries','ben']]:[['Referrals','allReferrals']];
+  var h=renderBreadcrumb(crumb,r.ref+' — '+r.name);
   /* header */
   h+='<div class="card detail-head"><div class="head-row"><div>';
   h+='<div class="dh-eyebrow">'+esc(r.ref)+'</div>';
@@ -78,21 +80,16 @@ function renderDetail(){
     var n=i+1;
     var isActive=STATE.step===n;
     var isDone=n<STATE.step;
-    var isLocked=(n>=4)&&(STATE.step<3);
-    var cls='detail-tab'+(isActive?' active':'')+(isDone?' done':'')+(isLocked?' locked':'');
-    var clickFn=isLocked?'void(0)':(n===4)?'setStepGuarded('+n+',\''+STATE.ref+'\')':'setStep('+n+')';
-    h+='<button class="'+cls+'" onclick="'+clickFn+'"'+(isLocked?' title="Complete the Registration Interview first" tabindex="-1"':'')+'>'+
+    var cls='detail-tab'+(isActive?' active':'')+(isDone?' done':'');
+    h+='<button class="'+cls+'" onclick="setStep('+n+')">'+
       (isDone?'<span class="dt-check">'+ic('check',11)+'</span>':'<span class="dt-num">'+n+'</span>')+
-      lbl+(isLocked?' <span style="font-size:10px;opacity:.5">'+ic('lock',10)+'</span>':'')+
-      '</button>';
+      lbl+'</button>';
   });
   h+='</div>';
   h+='<div class="detail-tab-content">';
   if(STATE.step===1)h+=renderStepReferralInfo(r);
   else if(STATE.step===2)h+=renderStep1(r);
-  else if(STATE.step===3)h+=renderRegInterview(r);
-  else if(STATE.step===4)h+=renderRegFinalising(r);
-  else h+=renderStepFollowUp(r);
+  else h+=renderRegInterview(r);
   h+='</div></div>';
   return h;
 }
@@ -104,22 +101,7 @@ document.addEventListener('click',function(e){
     if(dd)dd.style.display='none';
   }
 });
-function setStepGuarded(n,ref){
-  /* Warn if jumping to Registration Finalising (step 4) without visiting all 3 interview tabs */
-  if(n===4){
-    var visited=(STATE.tabsVisited&&STATE.tabsVisited[ref])||{};
-    var allDone=visited['1']&&visited['2']&&visited['3'];
-    if(!allDone){
-      var missing=[];
-      if(!visited['1'])missing.push('Household');
-      if(!visited['2'])missing.push('Dietary & Needs');
-      if(!visited['3'])missing.push('Wellbeing Screening');
-      var msg='Registration interview not complete \u2014 you have not been through: '+missing.join(', ')+'.\n\nAre you sure you want to move to Registration Finalising?';
-      if(!window.confirm(msg))return;
-    }
-  }
-  setStep(n);
-}
+
 function changeStatus(ref,status){var r=getRef(ref);r.status=status;if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Status saved');}).setStatus(ref,status);else toast('Status updated (demo)');render();}
 
 /* Step 0 — Referral Information + Household Management */
@@ -258,7 +240,10 @@ function renderStepReferralInfo(r){
     h+='</div>';
   }
 
-  h+='<div style="margin-top:18px"><button class="btn btn-green" onclick="setStep(2)">'+ic('arrow',15)+'Continue to Triage & Validation</button></div>';
+  h+='<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">';
+  h+='<button class="btn btn-green" onclick="setStep(2)">'+ic('arrow',15)+'Continue to Triage & Validation</button>';
+  if(isBeneficiary(r))h+='<button class="btn btn-ghost" onclick="setStep(3)">'+ic('ref',15)+'Open full registration file</button>';
+  h+='</div>';
   return h;
 }
 /* Step 1 (now step 2) — Triage & Validation */
@@ -367,25 +352,33 @@ function renderOnlinePending(){
 }
 
 /* ══ Step 2: REGISTRATION INTERVIEW ══════════════════ */
-var RTABS=[[1,'users','Household'],[2,'welfare','Dietary & Needs'],[3,'brain','Wellbeing Screening']];
+var RTABS=[[1,'users','Household & Documents'],[2,'welfare','Dietary & Needs'],[3,'brain','Wellbeing Screening'],[4,'clipboard','Finalising'],[5,'heart','Follow-up']];
 function renderRegInterview(r){
   var wf=getWelfare(r);
   /* mark current tab as visited */
   STATE.tabsVisited=STATE.tabsVisited||{};STATE.tabsVisited[r.ref]=STATE.tabsVisited[r.ref]||{};STATE.tabsVisited[r.ref][STATE.wtab]=true;
-  var h='<div class="card" style="padding:22px 26px"><div class="wtabs">';
-  var stepClasses=['step1','step2','step3'];
+  var h='<div class="card" style="padding:22px 26px"><div class="wtabs" style="flex-wrap:wrap">';
+  var stepClasses=['step1','step2','step3','step4','step5'];
   RTABS.forEach(function(t,i){
     var visited=(STATE.tabsVisited&&STATE.tabsVisited[r.ref]&&STATE.tabsVisited[r.ref][t[0]]);
     var isOn=(STATE.wtab===t[0]);
     var isDone=visited&&!isOn;
-    var cls='wtab '+stepClasses[i]+(isOn?' on':isDone?' done':'');
+    var isLocked=(t[0]>=4)&&!STATE.tabsVisited[r.ref][3];
+    var cls='wtab '+stepClasses[i]+(isOn?' on':isDone?' done':'')+(isLocked?' locked':'');
     var checkMark=isDone?'<span class="wtab-check">'+ic('check',10)+'</span>':'';
-    h+='<button class="'+cls+'" onclick="setWtab('+t[0]+')">'+ic(t[1],15)+t[0]+'. '+t[2]+checkMark+'</button>';
+    if(isLocked){
+      h+='<button class="'+cls+'" title="Complete Wellbeing Screening first" tabindex="-1">'+ic(t[1],15)+t[0]+'. '+t[2]+' '+ic('lock',10)+'</button>';
+    } else {
+      h+='<button class="'+cls+'" onclick="setWtab('+t[0]+')">'+ic(t[1],15)+t[0]+'. '+t[2]+checkMark+'</button>';
+    }
   });
   h+='</div>';
   if(STATE.wtab===1)h+=tabHousehold(r,wf);
   else if(STATE.wtab===2)h+=tabDietaryAndExisting(r,wf);
-  else h+=tabWellbeingScreening(r,wf);
+  else if(STATE.wtab===3)h+=tabWellbeingScreening(r,wf);
+  else if(STATE.wtab===4)h+=tabFinalising(r,wf);
+  else if(STATE.wtab===5)h+=tabFollowUp(r,wf);
+  else h+=tabHousehold(r,wf);
   h+='</div>';
   return h;
 }
@@ -579,7 +572,7 @@ function tabWellbeingScreening(r,wf){
     });
   }
   h+='<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">';
-  h+='<button class="btn btn-green" onclick="setStepGuarded(4,\''+r.ref+'\')">'+ic('arrow',15)+'Continue to Registration Finalising</button>';
+  h+='<button class="btn btn-green" onclick="setWtab(4)">'+ic('arrow',15)+'Continue to Finalising</button>';
   h+='<button class="btn btn-ghost" onclick="openWbInNewTab(\''+r.ref+'\')" style="color:var(--plum);border-color:var(--plum)">'+ic('wb',15)+'Open Wellbeing file</button>';
   h+='</div>';
   return h;
@@ -626,8 +619,8 @@ function openWbInNewTab(ref){
 }
 
 /* ══ Step 3: REGISTRATION FINALISING ════════════════ */
-function renderRegFinalising(r){
-  var wf=getWelfare(r);wf.assign=wf.assign||{};wf.endChecks=wf.endChecks||{};wf.flags=wf.flags||{};
+function tabFinalising(r,wf){
+  wf.assign=wf.assign||{};wf.endChecks=wf.endChecks||{};wf.flags=wf.flags||{};
   var flags=flagList(r);
   var h='<div class="card" style="padding:22px 26px">';
   h+='<div class="wsec-title">Registration Sign-off</div>';
@@ -670,19 +663,36 @@ function renderRegFinalising(r){
   h+='<button class="final-btn fb-orange" onclick="finalise(\''+r.ref+'\',\'rebook\')" style="opacity:.85"><div><div>Registration Incomplete — rebook</div><div class="fb-desc">Moves status to "Appointment Rescheduled". Sends the applicant a new booking link.</div></div>'+ic('cal',18)+'</button>';
   h+='</div></div>';
   h+='<div style="margin-top:18px;display:flex;gap:10px">';
-  h+='<button class="btn btn-ghost" onclick="setStep(3)">'+ic('back',15)+'Back to Registration Interview</button>';
-  h+='<button class="btn btn-green" onclick="setStep(5)">'+ic('arrow',15)+'Continue to Follow-up</button>';
+  h+='<button class="btn btn-ghost" onclick="setWtab(3)">'+ic('back',15)+'Back to Wellbeing Screening</button>';
+  h+='<button class="btn btn-green" onclick="setWtab(5)">'+ic('arrow',15)+'Continue to Follow-up</button>';
   h+='</div>';
   return h;
 }
-/* Step 5 — Follow-up */
-function renderStepFollowUp(r){
+/* Tab 5 — Follow-up */
+function tabFollowUp(r,wf){
+  wf.followUp=wf.followUp||{};
   var h='';
   var notes=(DATA.notes||[]).filter(function(n){return n.ref===r.ref;}).slice().reverse();
   var tasks=getAllTasks().filter(function(t){return t.ref===r.ref;});
-  var hh=getHouseholdForRef(r.ref);
 
-  /* Summary */
+  /* Assigned Wellbeing Officer */
+  h+='<div class="wsec-title">Wellbeing Follow-up Assignment</div>';
+  h+='<div class="assign-grid" style="margin-bottom:20px">';
+  h+='<div><label class="field-label" style="margin-top:0">Assigned wellbeing officer</label>';
+  h+='<select class="status-select" style="width:100%;max-width:260px" onchange="wfSet(\''+r.ref+'\',\'followUp.officer\',this.value)">';
+  h+='<option value="">— Select officer —</option>';
+  var WB_VOLUNTEERS=['Sophie','Olivia','Despina','Sonya','Amara'];
+  WB_VOLUNTEERS.forEach(function(v){h+='<option'+(wf.followUp.officer===v?' selected':'')+'>'+v+'</option>';});
+  h+='</select></div>';
+  h+='<div><label class="field-label" style="margin-top:0">Next wellbeing meeting</label>';
+  h+='<input class="tx-field" type="text" placeholder="DD/MM/YYYY" value="'+esc(wf.followUp.meetingDate||'')+'" style="max-width:180px" onchange="wfSet(\''+r.ref+'\',\'followUp.meetingDate\',this.value)"></div>';
+  h+='<div><label class="field-label" style="margin-top:0">Meeting location</label>';
+  h+='<input class="tx-field" type="text" placeholder="e.g. Zoom, OBA office, phone call" value="'+esc(wf.followUp.meetingLocation||'')+'" onchange="wfSet(\''+r.ref+'\',\'followUp.meetingLocation\',this.value)"></div>';
+  h+='</div>';
+
+  /* Summary stats */
+  h+='<div class="divider"></div>';
+  h+='<div class="wsec-title">Summary</div>';
   h+='<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">';
   h+='<div class="stat-c"><div class="sl">Status</div><div class="sn" style="font-size:16px">'+esc(r.status)+'</div></div>';
   h+='<div class="stat-c"><div class="sl">Support period</div><div class="sn" style="font-size:16px">'+esc(monthsOpen(r))+'</div></div>';
@@ -692,8 +702,8 @@ function renderStepFollowUp(r){
 
   /* Open tasks */
   if(tasks.length){
-    h+='<h2 style="margin-bottom:10px">Open tasks</h2>';
-    h+='<div class="card" style="margin-bottom:18px;padding:0;overflow:hidden">';
+    h+='<div class="wsec-title">Open tasks</div>';
+    h+='<div style="margin-bottom:18px">';
     tasks.forEach(function(t){
       h+='<div class="action-card" style="cursor:pointer" onclick="openWbFile(\''+r.ref+'\',2)">';
       h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
@@ -706,11 +716,11 @@ function renderStepFollowUp(r){
   }
 
   /* Recent notes */
-  h+='<h2 style="margin-bottom:10px">Notes</h2>';
+  h+='<div class="wsec-title">Notes</div>';
   if(!notes.length){
-    h+='<div class="card" style="padding:18px;margin-bottom:18px;color:var(--muted)">No notes recorded for this referral.</div>';
+    h+='<p style="color:var(--muted);margin-bottom:18px">No notes recorded for this referral.</p>';
   } else {
-    h+='<div class="card" style="padding:18px 22px;margin-bottom:18px">';
+    h+='<div style="margin-bottom:18px">';
     notes.forEach(function(n){
       h+='<div class="note-item"><div class="note-head"><span class="note-date">'+esc(n.date)+'</span><span class="note-cat">'+esc(n.category)+'</span>';
       if(n.duration)h+='<span class="note-dur">'+ic('clock',13)+esc(n.duration)+' min</span>';
@@ -720,10 +730,11 @@ function renderStepFollowUp(r){
   }
 
   /* Quick actions */
+  h+='<div class="divider"></div>';
   h+='<div style="display:flex;gap:10px;flex-wrap:wrap">';
   if(isComplex(r))h+='<button class="btn btn-plum" onclick="openWbFile(\''+r.ref+'\')">'+ic('wb',15)+'Open wellbeing file</button>';
   h+='<button class="btn btn-ghost" onclick="openBeneFile(\''+r.ref+'\')">'+ic('users',15)+'View beneficiary file</button>';
-  h+='<button class="btn btn-ghost" onclick="setStep(4)">'+ic('back',15)+'Back to Registration Finalising</button>';
+  h+='<button class="btn btn-ghost" onclick="setWtab(4)">'+ic('back',15)+'Back to Finalising</button>';
   h+='</div>';
   return h;
 }

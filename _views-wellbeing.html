@@ -9,7 +9,7 @@
 
 /* ══ Beneficiary file with referral history ══ */
 var STATE_benRef=null;
-function openBeneFile(ref){STATE_benRef=ref;render();window.scrollTo(0,0);}
+function openBeneFile(ref){STATE.detailFrom='ben';go('detail',ref);}
 function renderBeneFile(){
   var r=getRef(STATE_benRef);if(!r){STATE_benRef=null;return renderBen();}
   /* gather all historical + live referrals for this household by surname */
