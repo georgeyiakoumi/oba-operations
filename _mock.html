@@ -105,7 +105,7 @@ var MOCK={
 
 /* ── STATE ── */
 var DATA={}, WB_UNLOCKED=false;
-var STATE={view:'dashboard',dashTab:0,weekOffset:0,selectedDay:new Date().toISOString().slice(0,10),actionSort:'date',actionSortDir:'asc',actionVolFilter:'All',hhSearchOpen:false,hhSearchQuery:'',hhSearchSelected:null,wlSort:'wlDate',wlSortDir:'desc',allRefSort:'name',allRefSortDir:'asc',allRefBorough:'all',ref:null,step:1,wtab:1,regTab:0,wbTab:0,wbRef:null,wbMainTab:0,wbSearch:'',benSearch:'',benFilter:'all',benBorough:'all',allRefSearch:'',allRefFilter:'all',newRefSearch:'',taskFilter:'All',openArea:null,regSearch:'',volFilter:'All',wbNoteText:'',wbNoteCat:'General',wbNoteAuthor:'',wbNoteTopic:'',wbMeetingDate:'',wbAgenda:'',flagEditorOpen:null,tabsVisited:{}};
+var STATE={view:'dashboard',dashTab:0,weekOffset:0,closingOpen:false,selectedDay:new Date().toISOString().slice(0,10),actionSort:'date',actionSortDir:'asc',actionVolFilter:'All',hhSearchOpen:false,hhSearchQuery:'',hhSearchSelected:null,wlSort:'wlDate',wlSortDir:'desc',allRefSort:'name',allRefSortDir:'asc',allRefBorough:'all',ref:null,step:1,wtab:1,regTab:0,wbTab:0,wbRef:null,wbMainTab:0,wbSearch:'',benSearch:'',benFilter:'all',benBorough:'all',allRefSearch:'',allRefFilter:'all',newRefSearch:'',taskFilter:'All',openArea:null,regSearch:'',volFilter:'All',wbNoteText:'',wbNoteCat:'General',wbNoteAuthor:'',wbNoteTopic:'',wbMeetingDate:'',wbAgenda:'',flagEditorOpen:null,tabsVisited:{}};
 var hasGAS=(typeof google!=='undefined'&&google.script&&google.script.run);
 
 /* ── HELPERS ── */
