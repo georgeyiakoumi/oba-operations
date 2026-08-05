@@ -314,7 +314,21 @@ function renderStep1(r){
   return h;
 }
 function triage(ref,field,value){var r=getRef(ref);r[field]=value;if(hasGAS)google.script.run.withFailureHandler(function(e){toast('Error: '+e.message);}).saveTriageField(ref,field,value);render();}
-function waitlist(ref){var r=getRef(ref);r.status='Added to waiting list';if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Moved to waiting list');}).addToWaitlist(ref);else toast('Moved to waiting list (demo)');render();}
+function waitlist(ref){
+  var r=getRef(ref);
+  r.status='Added to waiting list';
+  r.waitlistDate=new Date().toISOString().slice(0,10);
+  if(hasGAS)google.script.run.withSuccessHandler(function(){}).addToWaitlist(ref);
+  /* Show notification email option */
+  var sendEmail=window.confirm('Moved to waiting list.\n\nWould you like to send a notification email to '+r.name+'?');
+  if(sendEmail){
+    if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Notification email sent');}).sendWaitlistEmail(ref);
+    else toast('Notification email sent (demo)');
+  }
+  /* Return to New Referrals */
+  STATE.view='newReferrals';
+  render();window.scrollTo(0,0);
+}
 function rejectRef(ref){var r=getRef(ref);r.status='Referral Rejected';if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Referral rejected');}).setStatus(ref,'Referral Rejected');else toast('Referral rejected (demo)');render();}
 function sendInviteUI(ref){var r=getRef(ref);var st=(r.apptType==='online')?'Pending online registration appointment':'Appointment offered/booking link sent';r.status=st;// DEV[1]: wire sendInvite() in Code.gs to your email + SMS booking-link gateway
   if(hasGAS)google.script.run.withSuccessHandler(function(){toast('Invite sent — email + text booking link');}).sendInvite(ref,r.apptType);else toast('Invite sent (demo)');render();}
