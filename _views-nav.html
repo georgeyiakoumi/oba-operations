@@ -180,7 +180,15 @@ function renderDashOverview(refs,todayStr){
       var bList=grouped[b];if(!bList)return;
       h+='<div class="cc-borough">'+b+'</div>';
       bList.forEach(function(r){
-        h+='<div class="cc-ref" onclick="go(\'detail\',\''+r.ref+'\')"><span class="cc-refnum">'+r.ref.replace('REF-','')+'</span>'+esc(r.name)+'</div>';
+        var hhInfo=' ('+r.adults+'A, '+r.children+'C)';
+        var flags=renderFlags(r,{showFinal:true});
+        h+='<div class="cc-ref" onclick="go(\'detail\',\''+r.ref+'\')">';
+        h+='<span class="cc-refnum">'+r.ref.replace('REF-','')+'</span>';
+        h+='<span style="font-weight:500">'+esc(r.name)+'</span>';
+        h+='<span style="color:var(--muted)">'+esc(hhInfo)+'</span>';
+        if(flags)h+=' '+flags;
+        h+='<span style="color:var(--faint);margin-left:auto">'+ic('chevron-right',13)+'</span>';
+        h+='</div>';
       });
     });
     h+='</div>';return h;
@@ -237,12 +245,20 @@ function renderDashActions(refs,todayStr){
   var selAppts=refs.filter(function(r){return r.apptDate&&r.apptDate===STATE.selectedDay;});
   selAppts.sort(function(a,b){return(a.apptTime||'').localeCompare(b.apptTime||'');});
   var selDate=new Date(STATE.selectedDay+'T00:00:00');
-  var selLabel=selDate.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  var selLabel=selDate.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var selColls=(DATA.collections||[]).filter(function(c){return c.date===STATE.selectedDay;});
 
+  /* Print button for the full day schedule */
+  if(selAppts.length||selColls.length){
+    h+='<div style="display:flex;justify-content:flex-end;margin-bottom:12px">';
+    h+='<button class="btn btn-ghost" onclick="printDaySchedule()" style="font-size:13px">'+ic('print',14)+' Print day schedule — '+selLabel+'</button>';
+    h+='</div>';
+  }
+
+  h+='<div id="print-day-schedule">';
   h+='<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px">';
   h+='<div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between">';
   h+='<h2 style="margin:0;display:flex;align-items:center;gap:8px">Appointments <span class="nav-badge">'+selAppts.length+'</span></h2>';
-  if(selAppts.length)h+='<button class="btn btn-ghost" onclick="window.print()" style="font-size:12px;padding:6px 12px">'+ic('print',13)+' Print</button>';
   h+='</div>';
   if(!selAppts.length){
     h+='<div style="padding:30px;text-align:center;color:var(--muted);font-size:14px">No appointments scheduled for '+selLabel+'.</div>';
@@ -284,6 +300,8 @@ function renderDashActions(refs,todayStr){
     });
     h+='</div>';
   }
+
+  h+='</div>'; /* close #print-day-schedule */
 
   /* Outstanding actions — full width, with sort + volunteer filter */
   var allActions=getAllTasks();
