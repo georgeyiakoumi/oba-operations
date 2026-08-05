@@ -370,6 +370,7 @@ function printDaySchedule(){
 function markCollection(ref,status){
   var cols=DATA.collections||[];
   for(var i=0;i<cols.length;i++){if(cols[i].ref===ref){cols[i].status=status;break;}}
+  if(hasGAS)google.script.run.saveCollection(ref,STATE.selectedDay,'',status);
   toast(status==='collected'?'Marked as collected':'Marked as did not attend');
   render();
 }
