@@ -215,17 +215,17 @@ function renderStepReferralInfo(r){
         h+='</div>';
       });
       if(STATE.hhSearchSelected){
-        h+='<button class="btn btn-green" style="margin-top:10px" onclick="linkToHousehold(\''+r.ref+'\',\''+STATE.hhSearchSelected+'\')">'+ic('link',15)+'Add into existing household</button> ';
+        h+='<div style="margin-top:12px"><button class="btn btn-green" style="min-width:220px" onclick="linkToHousehold(\''+r.ref+'\',\''+STATE.hhSearchSelected+'\')">'+ic('link',15)+'Add into existing household</button></div>';
       }
-      h+='<button class="btn btn-ghost" style="margin-top:10px" onclick="createHousehold(\''+r.ref+'\')">'+ic('plus',15)+'Create new household instead</button>';
     } else {
       h+='<div class="callout green" style="margin-bottom:14px">'+ic('check',15)+'<span><b>No previous records found</b> for this surname. This appears to be a first-time referral.</span></div>';
-      h+='<button class="btn btn-green" onclick="createHousehold(\''+r.ref+'\')">'+ic('plus',15)+'Create new household</button>';
     }
 
-    /* Manual search */
-    h+='<div style="margin-top:18px">';
-    h+='<button class="btn btn-ghost" onclick="STATE.hhSearchOpen=!STATE.hhSearchOpen;render()">'+ic('search',15)+(STATE.hhSearchOpen?'Close manual search':'Manual Search')+'</button>';
+    /* Action buttons — Manual Search first, then Create New Household */
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">';
+    h+='<button class="btn btn-ghost" style="min-width:180px" onclick="STATE.hhSearchOpen=!STATE.hhSearchOpen;render()">'+ic('search',15)+(STATE.hhSearchOpen?' Close search':'Manual Search')+'</button>';
+    h+='<button class="btn btn-ghost" style="min-width:180px" onclick="createHousehold(\''+r.ref+'\')">'+ic('plus',15)+'Create new household</button>';
+    h+='</div>';
     if(STATE.hhSearchOpen){
       h+='<div class="hh-search-panel">';
       h+='<div class="hh-search-grid">';
