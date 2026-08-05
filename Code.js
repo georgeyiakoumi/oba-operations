@@ -124,13 +124,16 @@
  */
 
 var REFERRAL_HEADERS = [
-  'ref','name','borough','type','receivedDate','adults','children','email','phone',
+  'ref','householdId','name','borough','type','receivedDate','adults','children','ages','email','phone',
   'status','flags','circumstances','triagePrev','triageBorough','apptType','apptSlot',
   'apptDate','apptTime','openFrom','openTo','wbOfficer','distributionGroup','distributionType',
-  'welfareJson','notes'
+  'waitlistDate','welfareJson','notes'
 ];
 var NOTE_HEADERS   = ['noteId','ref','date','author','category','duration','text'];
 var ACTION_HEADERS = ['actionId','ref','name','action','dueBy','officer','priority','status'];
+var HOUSEHOLD_HEADERS = ['id','name','primaryName','phone','email','postcode','borough','adults','children','ages','linkedRefs','created'];
+var COLLECTION_HEADERS = ['ref','date','time','status'];
+var HISTORICAL_HEADERS = ['ref','householdId','borough','receivedDate','adults','children','ages','phone','email','openFrom','openTo','status','circumstances','notes'];
 
 // DEV[11]: Update these totals to match your live service data, or replace with a dynamic count from the Referrals sheet
 var BOROUGH_COUNTS = {Lambeth:42, Southwark:29, Wandsworth:38, Croydon:24};
@@ -225,11 +228,29 @@ function seedData_(ss) {
 
   var hr = ss.insertSheet('HistoricalReferrals'); hr.appendRow(HISTORICAL_HEADERS);
   [
-    ['REF-0012','Miranda Knight','Southwark','15 Jan 2024','1','3','1F,5M,10M','07700 900103','miranda.k@email.com','Mar 2024','Jun 2024','Registration Complete - No follow up required','Initial referral following job loss. Three children including infant.','Completed 3-month cycle without incident. Closed on good terms.'],
-    ['REF-0058','Miranda Knight','Southwark','02 Sep 2024','1','3','2F,6M,11M','07700 900103','miranda.k@email.com','Oct 2025','Jan 2026','Registration Complete - WB follow up required [complex]','Return referral — domestic violence situation emerged. Children now older.','DV disclosed mid-cycle. Referred to Refuge. Case transferred to wellbeing follow-up.'],
-    ['REF-0071','James Church','Wandsworth','10 Mar 2024','1','2','2M,6F','07700 900112','j.church@email.com','Jan 2025','Apr 2025','Registration Complete - No follow up required','First referral — benefit delays after disability diagnosis.','Completed cycle. Benefits reinstated by month 2.'],
-    ['REF-0089','Melissa Owens','Wandsworth','14 Jun 2025','1','2','4F,7F','07700 900127','m.owens@email.com','Jun 2025','Sep 2025','Registration Complete - No follow up required','Single parent, UC delays after change of circumstances.','Completed cycle without issue.']
+    ['REF-0012','HH-001','Lambeth','14 Feb 2024','3','0','','07700 900201','tariq.c@email.com','Mar 2024','Jun 2024','Registration Complete - No follow up required','Benefit sanction, short-term food crisis.','Closed after 3 months. No complex needs.'],
+    ['REF-0030','HH-002','Lambeth','10 Aug 2024','3','0','','07700 900202','adam.o@email.com','Sep 2024','Dec 2024','Registration Complete - No follow up required','Redundancy, awaiting new employment.','Found work in month 3. Closed on schedule.'],
+    ['REF-0045','HH-003','Lambeth','03 Nov 2024','3','0','','07700 900205','maya.f@email.com','Dec 2024','Mar 2025','Registration Complete - No follow up required','Hours cut at work, temporary support.','Hours restored. Closed after 3 months.'],
+    ['REF-0058','HH-004','Lambeth','20 Jan 2025','1','1','1F','07700 900208','zara.m@email.com','Feb 2025','May 2025','Registration Complete - No follow up required','Asylum seeker, no recourse to public funds.','Extended to 4 months. Referred to legal aid.'],
+    ['REF-0071','HH-005','Lambeth','15 Mar 2025','2','0','','07700 900211','audrey.w@email.com','Apr 2025','Jul 2025','Registration Complete - No follow up required','Disability-related benefit gap.','PIP awarded month 2. Closed after 3 months.'],
+    ['REF-0089','HH-006','Croydon','03 Sep 2025','2','2','12M,2M','07700 900206','carlos.g@email.com','Oct 2025','Jan 2026','Registration Complete - WB follow up required [complex]','DV situation emerged. Complex MH needs flagged.','Safeguarding referral made. Case closed after 4 months.'],
+    ['REF-0095','HH-007','Lambeth','11 Jan 2025','2','2','8F,10M','07700 900240','ethan.h@email.com','Jan 2025','Apr 2025','Registration Complete - No follow up required','Job loss, short-term food crisis.','Resolved within standard 3-month cycle.']
   ].forEach(function(r) { hr.appendRow(r); });
+
+  /* Households sheet */
+  var hh = ss.insertSheet('Households'); hh.appendRow(HOUSEHOLD_HEADERS);
+  [
+    ['HH-001','Chowdhury','Tariq Chowdhury','07700 900201','tariq.c@email.com','SW9 7QD','Lambeth','3','0','','REF-0012,REF-0201','14 Feb 2024'],
+    ['HH-002','Owens','Adam Owens','07700 900202','adam.o@email.com','SE11 4AU','Lambeth','3','0','','REF-0030,REF-0202','10 Aug 2024'],
+    ['HH-003','Frederick','Maya Frederick','07700 900205','maya.f@email.com','SW2 1JF','Lambeth','3','0','','REF-0045,REF-0205','03 Nov 2024'],
+    ['HH-004','Martin','Zara Martin','07700 900208','zara.m@email.com','SW9 8PS','Lambeth','1','1','2F','REF-0058,REF-0208','20 Jan 2025'],
+    ['HH-005','Wagner','Audrey Wagner','07700 900211','audrey.w@email.com','SE5 0TF','Lambeth','2','0','','REF-0071,REF-0211','15 Mar 2025'],
+    ['HH-006','Gupta','Carlos Gupta','07700 900206','carlos.g@email.com','CR0 2AJ','Croydon','3','2','14M,2M','REF-0089,REF-0206','03 Sep 2025'],
+    ['HH-007','Huber','Ethan Huber','07700 900240','ethan.h@email.com','SW4 6DH','Lambeth','3','3','10F,12M,12M','REF-0095,REF-0240','11 Jan 2025']
+  ].forEach(function(r) { hh.appendRow(r); });
+
+  /* Collections sheet */
+  var co = ss.insertSheet('Collections'); co.appendRow(COLLECTION_HEADERS);
 }
 
 /* ─── Sheet helpers ─── */
@@ -262,17 +283,23 @@ function findRow_(sh, key, val) {
 }
 
 /* ─── Public API ─── */
-var HISTORICAL_HEADERS = ['ref','household','borough','receivedDate','adults','children','ages','phone','email','openFrom','openTo','status','circumstances','notes'];
-
 function getData() {
   var ss = getSpreadsheet_();
   var refs = ss.getSheetByName('Referrals');
   ensureColumns_(refs, REFERRAL_HEADERS);
+  var hhSheet = ss.getSheetByName('Households');
+  if (hhSheet) ensureColumns_(hhSheet, HOUSEHOLD_HEADERS);
+  var collSheet = ss.getSheetByName('Collections');
+  if (collSheet) ensureColumns_(collSheet, COLLECTION_HEADERS);
+  var histSheet = ss.getSheetByName('HistoricalReferrals');
+  if (histSheet) ensureColumns_(histSheet, HISTORICAL_HEADERS);
   return {
     referrals:            sheetToObjects_(refs, REFERRAL_HEADERS),
     notes:                sheetToObjects_(ss.getSheetByName('WellbeingNotes'), NOTE_HEADERS),
     actions:              sheetToObjects_(ss.getSheetByName('Actions'), ACTION_HEADERS),
-    historicalReferrals:  sheetToObjects_(ss.getSheetByName('HistoricalReferrals'), HISTORICAL_HEADERS),
+    historicalReferrals:  histSheet ? sheetToObjects_(histSheet, HISTORICAL_HEADERS) : [],
+    households:           hhSheet ? sheetToObjects_(hhSheet, HOUSEHOLD_HEADERS).map(function(h){h.linkedRefs=h.linkedRefs?h.linkedRefs.split(','):[];return h;}) : [],
+    collections:          collSheet ? sheetToObjects_(collSheet, COLLECTION_HEADERS) : [],
     boroughCounts:        BOROUGH_COUNTS,
     sheetUrl:             ss.getUrl()
   };
@@ -301,7 +328,52 @@ function sendInvite(ref, apptType) {
   // YourSmsGateway.send(phone, bookingUrl);
   return { ok: true, status: status };
 }
-function addToWaitlist(ref) { return setStatus(ref, 'Added to waiting list'); }
+function addToWaitlist(ref) {
+  var sh = getSpreadsheet_().getSheetByName('Referrals');
+  ensureColumns_(sh, REFERRAL_HEADERS);
+  var row = findRow_(sh, 'ref', ref); if (row < 0) return { ok: false };
+  sh.getRange(row, REFERRAL_HEADERS.indexOf('status')+1).setValue('Added to waiting list');
+  sh.getRange(row, REFERRAL_HEADERS.indexOf('waitlistDate')+1).setValue(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'));
+  return { ok: true };
+}
+function sendWaitlistEmail(ref) {
+  // DEV: Wire to your email system
+  // var sh = getSpreadsheet_().getSheetByName('Referrals');
+  // var row = findRow_(sh, 'ref', ref);
+  // var email = sh.getRange(row, REFERRAL_HEADERS.indexOf('email')+1).getValue();
+  // MailApp.sendEmail(email, 'OBA Waiting List Update', 'You have been added to our waiting list...');
+  return { ok: true };
+}
+function saveHousehold(household) {
+  var ss = getSpreadsheet_();
+  var sh = ss.getSheetByName('Households');
+  if (!sh) { sh = ss.insertSheet('Households'); sh.appendRow(HOUSEHOLD_HEADERS); }
+  ensureColumns_(sh, HOUSEHOLD_HEADERS);
+  var existing = findRow_(sh, 'id', household.id);
+  var rowData = HOUSEHOLD_HEADERS.map(function(h) {
+    return h === 'linkedRefs' ? (household[h]||[]).join(',') : (household[h]||'');
+  });
+  if (existing > 0) {
+    sh.getRange(existing, 1, 1, rowData.length).setValues([rowData]);
+  } else {
+    sh.appendRow(rowData);
+  }
+  return { ok: true };
+}
+function saveCollection(ref, date, time, status) {
+  var ss = getSpreadsheet_();
+  var sh = ss.getSheetByName('Collections');
+  if (!sh) { sh = ss.insertSheet('Collections'); sh.appendRow(COLLECTION_HEADERS); }
+  var vals = sh.getDataRange().getValues();
+  for (var i = 1; i < vals.length; i++) {
+    if (String(vals[i][0]) === ref && String(vals[i][1]) === date) {
+      sh.getRange(i+1, COLLECTION_HEADERS.indexOf('status')+1).setValue(status);
+      return { ok: true };
+    }
+  }
+  sh.appendRow([ref, date, time, status]);
+  return { ok: true };
+}
 function saveWelfare(ref, welfareJson, group, distType, status) {
   var sh = getSpreadsheet_().getSheetByName('Referrals');
   ensureColumns_(sh, REFERRAL_HEADERS);
