@@ -508,7 +508,9 @@ var WB_SCREEN_AREAS=[
    labels:['Universal Credit','PIP','Disability benefits','Child benefit','Housing benefit','Pension credit','Council tax support','Hardship fund']},
   {id:'dv',icon:'shield',title:'DV & Safeguarding',q:'Any indicators of domestic violence, abuse, or safeguarding concerns?',
    callout:{tone:'amber',text:'Data privacy rule: never record identifying details or names of perpetrators. Escalate to senior staff immediately if risk is acute.'},
-   labels:['Domestic violence','Coercive control','Child safeguarding','Adult safeguarding','MARAC referral','Refuge referral','NRPF']}
+   labels:['Domestic violence','Coercive control','Child safeguarding','Adult safeguarding','MARAC referral','Refuge referral','NRPF']},
+  {id:'housing',icon:'home',title:'Housing',q:'Any housing instability, risk of eviction, or homelessness concerns?',callout:null,
+   labels:['Eviction notice','Rent arrears','Temporary accommodation','Overcrowding','Disrepair','Homelessness','NRPF housing']}
 ];
 function tabWellbeingScreening(r,wf){
   wf.screen=wf.screen||{};wf.existing=wf.existing||{};
@@ -521,9 +523,7 @@ function tabWellbeingScreening(r,wf){
   /* ── Existing support ── */
   h+='<div class="wsec-title" style="font-size:15px">Existing support</div>';
   h+='<p style="color:var(--muted);font-size:13.5px;margin:-4px 0 10px">Who else is already helping?</p>';
-  h+='<div class="check-list" style="margin-bottom:6px">';
-  EXISTING.forEach(function(e){var on=wf.existing[e[0]];h+='<label class="check-row"><input type="checkbox" '+(on?'checked':'')+' onchange="wfToggle(\''+r.ref+'\',\'existing\',\''+e[0]+'\')">'+e[1]+'</label>';});
-  h+='</div><textarea class="ta-field" placeholder="Notes on existing support…" style="min-height:50px;margin-bottom:20px" onchange="wfSet(\''+r.ref+'\',\'existingNotes\',this.value)">'+esc(wf.existingNotes||'')+'</textarea>';
+  h+='<textarea class="ta-field" placeholder="Notes on existing support…" style="min-height:50px;margin-bottom:20px" onchange="wfSet(\''+r.ref+'\',\'existingNotes\',this.value)">'+esc(wf.existingNotes||'')+'</textarea>';
   /* ── Screening areas (slim boxes) ── */
   h+='<div class="wsec-title" style="font-size:15px">Wellbeing screening</div>';
   h+='<p style="color:var(--muted);font-size:13.5px;margin:-4px 0 14px">Tick any areas where concerns are identified.</p>';
@@ -538,41 +538,38 @@ function tabWellbeingScreening(r,wf){
     h+='</div>';
   });
 
-  /* ── Flagged areas: labels + task creation (at the bottom) ── */
+  /* ── Single "Add a task" section when any area is flagged ── */
   if(flaggedAreas.length){
     h+='<div class="divider"></div>';
-    h+='<div class="wsec-title" style="font-size:15px">Flagged concerns — details</div>';
-    h+='<p style="color:var(--muted);font-size:13.5px;margin:-4px 0 14px">Add labels and create tasks for each flagged area.</p>';
+    h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'+ic('plus',18)+'<span class="wsec-title" style="font-size:15px;margin:0">Add a task</span></div>';
+    h+='<p style="color:var(--muted);font-size:13.5px;margin-bottom:14px">Create a task for the flagged concerns. Select a category below.</p>';
+    /* Callouts for flagged areas that have them */
     flaggedAreas.forEach(function(area){
-      var s=wf.screen[area.id]||{};var tk=s.task||{};
-      s.labels=s.labels||[];
-      h+='<div style="border:1px solid #e9cddd;border-radius:var(--radius);padding:16px 20px;margin-bottom:14px;background:var(--plum-bg)">';
-      h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="color:var(--plum)">'+ic(area.icon,18)+'</span><span style="font-weight:600;font-size:15px;color:var(--plum)">'+area.title+'</span></div>';
-      if(area.callout)h+='<div class="callout '+area.callout.tone+'" style="margin-bottom:10px">'+ic(area.callout.tone==='red'?'warn':'shield',14)+'<span>'+area.callout.text+'</span></div>';
-      /* Labels (multiple choice chips) */
-      if(area.labels&&area.labels.length){
-        h+='<div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px">Labels</div>';
-        h+='<div class="select-chips" style="margin-bottom:12px">';
-        area.labels.forEach(function(lbl){
-          var on=s.labels.indexOf(lbl)>=0;
-          h+='<button class="schip'+(on?' on':'')+'" style="font-size:12px;padding:5px 12px" onclick="screenLabelToggle(\''+r.ref+'\',\''+area.id+'\',\''+esc(lbl)+'\')">'+lbl+'</button>';
-        });
-        h+='</div>';
-      }
-      /* Task creation */
-      if(s.taskLogged){
-        h+='<div class="callout green">'+ic('check',14)+'<b>Task logged in Wellbeing file.</b></div>';
-      } else {
-        h+='<div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px">Create task</div>';
-        h+='<textarea class="ta-field" placeholder="Describe the concern or action needed…" style="min-height:50px;margin-bottom:8px" onchange="screenTaskSet(\''+r.ref+'\',\''+area.id+'\',\'note\',this.value)">'+esc(tk.note||'')+'</textarea>';
-        h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">';
-        h+='<div style="flex:1;min-width:140px"><label style="font-size:12px;color:var(--muted)">Volunteer</label><input class="tx-field" style="margin-top:4px;font-size:13px" placeholder="Name" value="'+esc(tk.owner||'')+'" onchange="screenTaskSet(\''+r.ref+'\',\''+area.id+'\',\'owner\',this.value)"></div>';
-        h+='<div style="flex:1;min-width:140px"><label style="font-size:12px;color:var(--muted)">Due date</label><input class="tx-field" style="margin-top:4px;font-size:13px" type="text" placeholder="DD/MM/YYYY" value="'+esc(tk.due||'')+'" onchange="screenTaskSet(\''+r.ref+'\',\''+area.id+'\',\'due\',this.value)"></div>';
-        h+='</div>';
-        h+='<button class="btn btn-plum" style="font-size:13px;padding:8px 16px" onclick="screenLogTask(\''+r.ref+'\',\''+area.id+'\')">'+ic('check',14)+'Log task</button>';
-      }
-      h+='</div>';
+      if(area.callout)h+='<div class="callout '+area.callout.tone+'" style="margin-bottom:10px">'+ic(area.callout.tone==='red'?'warn':'shield',14)+'<span><b>'+area.title+':</b> '+area.callout.text+'</span></div>';
     });
+    /* Category badges = flagged area titles */
+    wf.screen._taskArea=wf.screen._taskArea||flaggedAreas[0].id;
+    h+='<div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px">Category</div>';
+    h+='<div class="select-chips" style="margin-bottom:14px">';
+    flaggedAreas.forEach(function(area){
+      var on=wf.screen._taskArea===area.id;
+      h+='<button class="schip'+(on?' on':'')+'" style="font-size:12px;padding:5px 12px" onclick="getWelfare(getRef(\''+r.ref+'\')).screen._taskArea=\''+area.id+'\';render()">'+ic(area.icon,13)+' '+area.title+'</button>';
+    });
+    h+='</div>';
+    /* Task form for selected category */
+    var selArea=WB_SCREEN_AREAS.filter(function(a){return a.id===wf.screen._taskArea;})[0]||flaggedAreas[0];
+    var selScreen=wf.screen[selArea.id]||{};var tk=selScreen.task||{};
+    if(selScreen.taskLogged){
+      h+='<div class="callout green">'+ic('check',14)+'<b>Task logged in Wellbeing file.</b></div>';
+    } else {
+      h+='<div style="font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px">Task description</div>';
+      h+='<textarea class="ta-field" placeholder="Describe the concern or action needed…" style="min-height:50px;margin-bottom:8px" onchange="screenTaskSet(\''+r.ref+'\',\''+selArea.id+'\',\'note\',this.value)">'+esc(tk.note||'')+'</textarea>';
+      h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">';
+      h+='<div style="flex:1;min-width:140px"><label style="font-size:12px;color:var(--muted)">Volunteer</label><input class="tx-field" style="margin-top:4px;font-size:13px" placeholder="Name" value="'+esc(tk.owner||'')+'" onchange="screenTaskSet(\''+r.ref+'\',\''+selArea.id+'\',\'owner\',this.value)"></div>';
+      h+='<div style="flex:1;min-width:140px"><label style="font-size:12px;color:var(--muted)">Due date</label><input class="tx-field" style="margin-top:4px;font-size:13px" type="text" placeholder="DD/MM/YYYY" value="'+esc(tk.due||'')+'" onchange="screenTaskSet(\''+r.ref+'\',\''+selArea.id+'\',\'due\',this.value)"></div>';
+      h+='</div>';
+      h+='<button class="btn btn-plum" style="font-size:13px;padding:8px 16px" onclick="screenLogTask(\''+r.ref+'\',\''+selArea.id+'\')">'+ic('check',14)+'Log task</button>';
+    }
   }
   h+='<div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">';
   h+='<button class="btn btn-green" onclick="setWtab(4)">'+ic('arrow',15)+'Continue to Finalising</button>';
