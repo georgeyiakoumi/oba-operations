@@ -241,8 +241,11 @@ function renderStepReferralInfo(r){
   }
 
   h+='<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap">';
-  h+='<button class="btn btn-green" onclick="setStep(2)">'+ic('arrow',15)+'Continue to Triage & Validation</button>';
-  if(isBeneficiary(r))h+='<button class="btn btn-ghost" onclick="setStep(3)">'+ic('ref',15)+'Open full registration file</button>';
+  if(isBeneficiary(r)){
+    h+='<button class="btn btn-plum" onclick="openWbFile(\''+r.ref+'\')">'+ic('wb',15)+'Open wellbeing file</button>';
+  } else {
+    h+='<button class="btn btn-green" onclick="setStep(2)">'+ic('arrow',15)+'Continue to Triage & Validation</button>';
+  }
   h+='</div>';
   return h;
 }
